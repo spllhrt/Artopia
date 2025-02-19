@@ -94,7 +94,8 @@ const ProfileScreen = () => {
       <Text style={styles.title}>My Profile</Text>
       
       {/* Conditionally render the avatar if available */}
-      {user?.image && <Image source={{ uri: user.image.url }} style={styles.avatar} />}
+      {user?.avatar?.url && <Image source={{ uri: user.avatar.url }} style={styles.avatar} />}
+
       
       {/* Avatar picker section */}
       <TouchableOpacity style={styles.avatarButton} onPress={handleAvatarChange}>
