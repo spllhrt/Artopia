@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json({limit:'50mb'}));
 app.use(express.urlencoded({limit: "50mb", extended: true }));
 const corsOptions = {
-    origin: `http://192.168.1.3:${PORT}`,  // Replace with your frontend URL (e.g., 'http://localhost:3000' for development)
+    origin: `http://192.168.43.59:${PORT}`,  // Replace with your frontend URL (e.g., 'http://localhost:3000' for development)
     credentials: true,  // Allow cookies to be sent with the request
   };
   
@@ -35,5 +35,5 @@ cloudinary.config({
 app.use('/api/', auth);
 
 app.listen(PORT, () => {
-    console.log(`✅ Server running on http://192.168.1.3:${PORT}`);
+    console.log(`✅ Server running on http://192.168.43.59:${PORT}`);
 });

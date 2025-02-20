@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://192.168.1.3:4000/api"; // Replace with your actual backend URL
+const API_URL = "http://192.168.43.59:4000/api"; // Replace with your actual backend URL
 
 // Register user function (as you already have)
 export const registerUser = async (formData) => {
