@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../redux/authSlice";
 import { useNavigation } from "@react-navigation/native";
 
 const HomeScreen = () => {
@@ -10,25 +9,17 @@ const HomeScreen = () => {
   const { user } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
-    dispatch(logout());  // Logout action
-    navigation.navigate("Login");  // Navigate to login screen
+    dispatch(logout()); 
+    navigation.navigate("Login");
   };
 
   const goToProfile = () => {
-    navigation.navigate("Profile");  // Navigate to Profile screen
+    navigation.navigate("Profile");
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>Welcome, {user?.name}!</Text>
-
-      <TouchableOpacity style={styles.button} onPress={goToProfile}>
-        <Text style={styles.buttonText}>Go to Profile</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
     </View>
   );
 };
@@ -38,27 +29,27 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",  // Light background color for a modern look
+    backgroundColor: "#f5f5f5",
     padding: 20,
   },
   welcomeText: {
     fontSize: 28,
     fontWeight: "bold",
     marginBottom: 40,
-    color: "#333",  // Dark text for better readability
+    color: "#333",
   },
   button: {
-    backgroundColor: "#4CAF50",  // Primary green button color
+    backgroundColor: "#4CAF50",
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 25,
     marginBottom: 15,
     width: "100%",
-    maxWidth: 300,  // Restrict max width for consistency
+    maxWidth: 300,  
     alignItems: "center",
   },
   logoutButton: {
-    backgroundColor: "#f44336",  // Red color for logout to signify caution
+    backgroundColor: "#f44336",  
   },
   buttonText: {
     color: "#fff",

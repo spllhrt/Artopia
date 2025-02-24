@@ -1,65 +1,73 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import { View, Text, Alert, StyleSheet } from "react-native";
+import { TextInput, Button } from "react-native-paper";
 import { useDispatch } from "react-redux";
 import { setUser } from "../redux/authSlice";
 import { loginUser } from "../api/api";
 import { useNavigation } from "@react-navigation/native";
 
 const LoginScreen = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
   const handleInputChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
   };
-
   const handleLogin = async () => {
     if (!formData.email || !formData.password) {
       Alert.alert("Error", "Please enter both email and password");
       return;
     }
-
+    setLoading(true);
     try {
       const response = await loginUser(formData);
       dispatch(setUser({ user: response.user, token: response.token }));
-      navigation.navigate("Home");  // Navigate to Home screen upon successful login
+  
     } catch (error) {
       Alert.alert("Error", error.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
-
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome Back</Text>
-      <Text style={styles.subtitle}>Please log in to your account</Text>
-
+      <Text style={styles.subtitle}>Log in to continue</Text>
+      
       <TextInput
-        style={styles.input}
-        placeholder="Email"
+        label="Email"
         value={formData.email}
         onChangeText={(text) => handleInputChange("email", text)}
         keyboardType="email-address"
-        placeholderTextColor="#999"
+        mode="outlined"
+        style={styles.input}
+        theme={{ colors: { primary: "#3b82f6" } }}
       />
       <TextInput
-        style={styles.input}
-        placeholder="Password"
+        label="Password"
         value={formData.password}
         onChangeText={(text) => handleInputChange("password", text)}
         secureTextEntry
-        placeholderTextColor="#999"
+        mode="outlined"
+        style={styles.input}
+        theme={{ colors: { primary: "#3b82f6" } }}
       />
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
-
+      
+      <Button
+        mode="contained"
+        onPress={handleLogin}
+        loading={loading}
+        style={styles.button}
+        theme={{ colors: { primary: "#3b82f6" } }}
+      >
+        Login
+      </Button>
+      
       <Text style={styles.footerText}>
-        Don't have an account?{" "}
+        Don't have an account?{' '}
         <Text style={styles.link} onPress={() => navigation.navigate("Register")}>
           Sign Up
         </Text>
@@ -72,11 +80,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    padding: 25,
+    padding: 20,
     backgroundColor: "#f5f5f5",
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
     color: "#333",
     textAlign: "center",
@@ -89,26 +97,13 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 15,
     marginBottom: 15,
-    borderRadius: 10,
     backgroundColor: "#fff",
-    fontSize: 16,
-    color: "#333",
   },
   button: {
-    backgroundColor: "#4CAF50",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
     marginTop: 20,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    paddingVertical: 8,
+    backgroundColor: "#2C3E50",
   },
   footerText: {
     textAlign: "center",
@@ -117,7 +112,7 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   link: {
-    color: "#4CAF50",
+    color: "#2C3E50",
     fontWeight: "bold",
   },
 });
