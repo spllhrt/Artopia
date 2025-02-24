@@ -23,6 +23,7 @@ const corsOptions = {
   
 
 const auth = require('./routes/auth');
+const artwork = require('./routes/artwork');
 
 
 connectDatabase();
@@ -32,7 +33,9 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 })
 
+
 app.use('/api/', auth);
+app.use('/api/', artwork);
 
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://192.168.1.6:${PORT}`);

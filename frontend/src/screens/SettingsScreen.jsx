@@ -1,17 +1,13 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Switch } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useDispatch } from "react-redux";
 import { logout } from "../redux/authSlice";
 import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
 const SettingsScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
-
-  const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
-  const toggleNotifications = () => setIsNotificationsEnabled((prev) => !prev);
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to log out?", [
@@ -22,30 +18,28 @@ const SettingsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Settings</Text>
-
-      <TouchableOpacity style={styles.item} onPress={() => navigation.navigate("Home", { screen: "Profile" })}>
-        <Text style={styles.itemText}>Edit Profile</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Settings</Text>
+      </View>
+      
+      <TouchableOpacity style={styles.item} onPress={() => navigation.navigate("Profile")}>
+      <Ionicons name="person-outline" size={20} color="#2C3E50" style={styles.icon} />
+        <Text style={styles.itemText}>Go to Profile</Text>
       </TouchableOpacity>
 
-      {/* <View style={styles.itemRow}>
-        <Text style={styles.itemText}>Dark Mode</Text>
-        <Switch value={isDarkMode} onValueChange={toggleDarkMode} />
-      </View>
-      <View style={styles.itemRow}>
-        <Text style={styles.itemText}>Notifications</Text>
-        <Switch value={isNotificationsEnabled} onValueChange={toggleNotifications} />
-      </View> */}
-
       <TouchableOpacity style={styles.item}>
+        <Ionicons name="help-circle-outline" size={20} color="#2C3E50" style={styles.icon} />
         <Text style={styles.itemText}>Help & Support</Text>
       </TouchableOpacity>
+
       <TouchableOpacity style={styles.item}>
+        <Ionicons name="lock-closed-outline" size={20} color="#2C3E50" style={styles.icon} />
         <Text style={styles.itemText}>Privacy Policy</Text>
       </TouchableOpacity>
 
       {/* Logout */}
       <TouchableOpacity style={styles.logoutItem} onPress={handleLogout}>
+        <Ionicons name="log-out-outline" size={20} color="red" style={styles.icon} />
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
     </View>
@@ -55,34 +49,41 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFF",
+  },
+  headerContainer: {
     padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+    backgroundColor: "#F7F7F7",
   },
   header: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 20,
+    color: "#2C3E50",
   },
   item: {
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-  },
-  itemRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 15,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    borderBottomColor: "#EAEAEA",
+    backgroundColor: "#FFF",
   },
   itemText: {
     fontSize: 16,
+    color: "#555",
+  },
+  icon: {
+    marginRight: 15,
   },
   logoutItem: {
-    marginTop: 30,
-    paddingVertical: 15,
+    flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    marginTop: 30,
   },
   logoutText: {
     fontSize: 16,

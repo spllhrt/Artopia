@@ -1,21 +1,10 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 
 const HomeScreen = () => {
-  const dispatch = useDispatch();
-  const navigation = useNavigation();
   const { user } = useSelector((state) => state.auth);
-
-  const handleLogout = () => {
-    dispatch(logout()); 
-    navigation.navigate("Login");
-  };
-
-  const goToProfile = () => {
-    navigation.navigate("Profile");
-  };
 
   return (
     <View style={styles.container}>
