@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, Alert, StyleSheet } from "react-native";
+import { View, Text, Alert, StyleSheet, Image } from "react-native"; 
 import { TextInput, Button } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { useDispatch } from "react-redux";
-import { setUser } from "../redux/authSlice";
 import { registerUser } from "../api/api";
 import { useNavigation } from "@react-navigation/native";
 
@@ -46,26 +45,26 @@ const RegisterScreen = () => {
       Alert.alert("Error", "Please upload an avatar image");
       return;
     }
-
+  
     const data = new FormData();
     data.append("name", formData.name);
     data.append("email", formData.email);
     data.append("password", formData.password);
     data.append("avatar", { uri: avatar, type: "image/jpeg", name: "avatar.jpg" });
-
+  
     setLoading(true);
     try {
-      const response = await registerUser(data);
-      dispatch(setUser({ user: response.user, token: response.token }));
-      Alert.alert("Success", "Registration successful!");
-      navigation.navigate("Login");
+      await registerUser(data);
+  
+      Alert.alert("Success", "Registration successful! Please log in.");
+      navigation.navigate("Login"); 
     } catch (error) {
       Alert.alert("Error", error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create an Account</Text>
@@ -111,7 +110,7 @@ const RegisterScreen = () => {
       </Button>
 
       <Text style={styles.footerText}>
-        Already have an account?{' '}
+        Already have an account?{" "}
         <Text style={styles.link} onPress={() => navigation.navigate("Login")}>
           Login
         </Text>
