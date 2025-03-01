@@ -15,8 +15,8 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json({limit:'50mb'}));
 app.use(express.urlencoded({limit: "50mb", extended: true }));
 const corsOptions = {
-    origin: `http://192.168.1.6:${PORT}`,  // Replace with your frontend URL (e.g., 'http://localhost:3000' for development)
-    credentials: true,  // Allow cookies to be sent with the request
+    origin: `http://192.168.55.103:${PORT}`,  // eto babaguhin
+    credentials: true, 
   };
   
   app.use(cors(corsOptions));
@@ -38,5 +38,5 @@ app.use('/api/', auth);
 app.use('/api/', artwork);
 
 app.listen(PORT, () => {
-    console.log(`✅ Server running on http://192.168.1.6:${PORT}`);
+    console.log(`✅ Server running on http://192.168.55.103:${PORT}`);
 });
