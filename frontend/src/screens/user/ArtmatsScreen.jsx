@@ -1,108 +1,94 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
-import { getArtworks } from "../../api/artApi"; // Keep your import path
+import { getArtmats } from "../../api/matApi"; // Updated import path for art materials
 
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 48) / 2; // 2 cards per row with margins
 
-const ArtworksScreen = ({ navigation }) => {
-  const [artworks, setArtworks] = useState([]);
+const ArtmatsScreen = ({ navigation }) => {
+  const [artmats, setArtmats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Add a key state to force re-render when needed
   const [listKey, setListKey] = useState("grid");
 
   useEffect(() => {
-    fetchArtworks();
+    fetchArtmats();
   }, []);
 
-  const fetchArtworks = async () => {
+  const fetchArtmats = async () => {
     try {
       setLoading(true);
-      const response = await getArtworks();
+      const response = await getArtmats();
       
-      // Extract the artworks array and log the first item's images structure
-      const artworksData = response.artworks || [];
-      if (artworksData.length > 0) {
-        console.log("First artwork images:", JSON.stringify(artworksData[0].images));
+      // Extract the artmats array and log the first item's images structure
+      const artmatsData = response.artmats || [];
+      if (artmatsData.length > 0) {
+        console.log("First artmat images:", JSON.stringify(artmatsData[0].images));
       }
       
-      setArtworks(artworksData);
+      setArtmats(artmatsData);
       setError(null);
     } catch (err) {
       console.error("Error details:", JSON.stringify(err, null, 2));
       console.error("Error message:", err.message);
-      setError(err.message || "Failed to load artworks");
+      setError(err.message || "Failed to load art materials");
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper function to get image URI
-  const getImageUri = (artwork) => {
-    if (!artwork.images) return null;
+  // Helper function to get image URI - adapted for the artmat model's image structure
+  const getImageUri = (artmat) => {
+    if (!artmat.images || artmat.images.length === 0) return null;
     
-    // Check if images is an array of strings
-    if (Array.isArray(artwork.images) && artwork.images.length > 0) {
-      // If the first item is a string, use it directly
-      if (typeof artwork.images[0] === 'string') {
-        return artwork.images[0];
-      }
-      
-      // If the first item is an object with a url property
-      if (typeof artwork.images[0] === 'object' && artwork.images[0]?.url) {
-        return artwork.images[0].url;
-      }
-    }
-    
-    return null;
+    // Based on the model schema, images are objects with url property
+    return artmat.images[0].url;
   };
 
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  const renderArtwork = ({ item }) => {
+  const renderArtmat = ({ item }) => {
     const imageUri = getImageUri(item);
     
     return (
       <TouchableOpacity 
-        style={styles.artworkCard}
-        onPress={() => navigation.navigate('ArtworkDetail', { id: item._id })}
+        style={styles.artmatCard}
+        onPress={() => navigation.navigate('ArtmatDetail', { id: item._id })}
         activeOpacity={0.8}
       >
         <View style={styles.imageContainer}>
           {imageUri ? (
             <Image 
               source={{ uri: imageUri }} 
-              style={styles.artworkImage} 
+              style={styles.artmatImage} 
               resizeMode="cover"
             />
           ) : (
-            <View style={[styles.artworkImage, styles.placeholderImage]}>
+            <View style={[styles.artmatImage, styles.placeholderImage]}>
               <Text style={styles.placeholderText}>No Image</Text>
             </View>
           )}
         </View>
         
-        <View style={styles.artworkInfo}>
-          <Text style={styles.artworkTitle} numberOfLines={1} ellipsizeMode="tail">
-            {item.title}
+        <View style={styles.artmatInfo}>
+          <Text style={styles.artmatTitle} numberOfLines={1} ellipsizeMode="tail">
+            {item.name}
           </Text>
-          <Text style={styles.artworkArtist} numberOfLines={1} ellipsizeMode="tail">
-            By {item.artist}
-          </Text>
-          <Text style={styles.artworkCategory} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={styles.artmatCategory} numberOfLines={1} ellipsizeMode="tail">
             {item.category}
           </Text>
-          <View style={styles.priceContainer}>
-            <Text style={styles.artworkPrice}>${formatPrice(item.price)}</Text>
-            {item.ratings > 0 && (
-              <View style={styles.ratingContainer}>
-                <Text style={styles.ratingText}>★ {item.ratings}</Text>
-              </View>
-            )}
+          <View style={styles.infoRow}>
+            <Text style={styles.artmatPrice}>${formatPrice(item.price)}</Text>
+            <Text style={styles.stockText}>Stock: {item.stock}</Text>
           </View>
+          {item.ratings > 0 && (
+            <View style={styles.ratingContainer}>
+              <Text style={styles.ratingText}>★ {item.ratings}</Text>
+              <Text style={styles.reviewCount}>({item.numOfReviews} reviews)</Text>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -113,29 +99,29 @@ const ArtworksScreen = ({ navigation }) => {
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#2a9d8f" />
-          <Text style={styles.loadingText}>Loading artworks...</Text>
+          <Text style={styles.loadingText}>Loading art materials...</Text>
         </View>
       ) : error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Error: {error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchArtworks}>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchArtmats}>
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      ) : artworks.length === 0 ? (
-        <Text style={styles.noArtworksText}>No artworks available</Text>
+      ) : artmats.length === 0 ? (
+        <Text style={styles.noArtmatsText}>No art materials available</Text>
       ) : (
         <FlatList
           key={listKey}
-          data={artworks}
-          renderItem={renderArtwork}
+          data={artmats}
+          renderItem={renderArtmat}
           keyExtractor={(item) => item._id.toString()}
           showsVerticalScrollIndicator={false}
           numColumns={2}
           columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.listContainer}
           refreshing={loading}
-          onRefresh={fetchArtworks}
+          onRefresh={fetchArtmats}
         />
       )}
     </View>
@@ -161,7 +147,7 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 20,
   },
-  artworkCard: {
+  artmatCard: {
     width: cardWidth,
     marginBottom: 16,
     borderRadius: 12,
@@ -180,7 +166,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 12,
     overflow: "hidden",
   },
-  artworkImage: {
+  artmatImage: {
     width: "100%",
     height: "100%",
   },
@@ -194,34 +180,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
-  artworkInfo: {
+  artmatInfo: {
     padding: 12,
   },
-  artworkTitle: {
+  artmatTitle: {
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 4,
     color: "#333",
   },
-  artworkArtist: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
-  },
-  artworkCategory: {
+  artmatCategory: {
     fontSize: 12,
     color: "#888",
     marginBottom: 8,
   },
-  priceContainer: {
+  infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 4,
   },
-  artworkPrice: {
+  artmatPrice: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#2a9d8f",
+  },
+  stockText: {
+    fontSize: 12,
+    color: "#666",
   },
   ratingContainer: {
     flexDirection: "row",
@@ -231,6 +217,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#f9a825",
     fontWeight: "bold",
+    marginRight: 4,
+  },
+  reviewCount: {
+    fontSize: 10,
+    color: "#888",
   },
   loaderContainer: {
     flex: 1,
@@ -263,7 +254,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
-  noArtworksText: {
+  noArtmatsText: {
     textAlign: "center",
     fontSize: 16,
     color: "#666",
@@ -271,4 +262,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ArtworksScreen;
+export default ArtmatsScreen;

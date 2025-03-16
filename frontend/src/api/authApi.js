@@ -1,78 +1,84 @@
 import axios from "axios";
+import { storeToken, getToken, removeToken } from "../utils/secureStorage";
 
-const API_URL = "http://192.168.1.5:4000/api";
+const API_URL = "http://192.168.1.5:4000/api"; 
 
+const apiClient = axios.create({
+  baseURL: API_URL,
+});
+
+apiClient.interceptors.request.use(async (config) => {
+  const token = await getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export const registerUser = async (formData) => {
   try {
-    const response = await axios.post(`${API_URL}/register`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+    const response = await apiClient.post("/register", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
-    return response.data; 
+    return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "Something went wrong during registration" };
+    throw error.response?.data || { message: "Registration failed" };
   }
 };
 
 export const loginUser = async ({ email, password }) => {
   try {
-    const response = await axios.post(`${API_URL}/login`, { email, password });
-    return response.data; 
+    const response = await apiClient.post("/login", { email, password });
+
+    if (response.data.token) {
+      await storeToken(response.data.token); 
+    }
+
+    return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "Something went wrong during login" };
+    throw error.response?.data || { message: "Login failed" };
   }
 };
 
-export const updateUserProfile = async (formData, token) => {
+export const getUserProfile = async () => {
   try {
-    const response = await axios.put(`${API_URL}/me/update`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`, 
-      },
+    const response = await apiClient.get("/me");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Failed to fetch profile" };
+  }
+};
+
+export const updateUserProfile = async (formData) => {
+  try {
+    const response = await apiClient.put("/me/update", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
-    return response.data; 
+    return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "Something went wrong during profile update" };
+    throw error.response?.data || { message: "Profile update failed" };
   }
 };
 
-export const updatePassword = async (oldPassword, newPassword, token) => {
+export const updatePassword = async (oldPassword, newPassword) => {
   try {
-    const response = await axios.put(
-      `${API_URL}/password/update`,
-      { oldPassword, password: newPassword },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    return response.data; 
-  } catch (error) {
-    throw error.response?.data || { message: "Something went wrong during password update" };
-  }
-};
-
-export const getUserProfile = async (token) => {
-  try {
-    const response = await axios.get(`${API_URL}/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`, 
-      },
+    const response = await apiClient.put("/password/update", {
+      oldPassword,
+      password: newPassword,
     });
-    return response.data; 
+    return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "Something went wrong fetching user profile" };
+    throw error.response?.data || { message: "Password update failed" };
   }
 };
 
-export const logoutUser = () => {
+export const logoutUser = async () => {
   try {
+    await removeToken(); 
     return { message: "Logged out successfully" };
   } catch (error) {
-    throw { message: "Something went wrong during logout" };
+    throw { message: "Logout failed" };
   }
 };
+
+export default apiClient;

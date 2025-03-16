@@ -3,7 +3,7 @@ import { View, Text, Alert, StyleSheet } from "react-native";
 import { TextInput, Button } from "react-native-paper";
 import { useDispatch } from "react-redux";
 import { setUser } from "../redux/authSlice";
-import { loginUser } from "../api/api";
+import { loginUser } from "../api/authApi";
 import { useNavigation } from "@react-navigation/native";
 
 const LoginScreen = () => {

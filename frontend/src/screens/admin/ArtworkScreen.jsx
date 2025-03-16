@@ -16,7 +16,7 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
-import { getArtworks, deleteArtwork, createArtwork, updateArtwork } from '../../api/artApi';
+import { getAdminArtworks, deleteArtwork, createArtwork, updateArtwork } from '../../api/artApi';
 import { AntDesign } from '@expo/vector-icons';
 
 const ArtworkScreen = () => {
@@ -45,14 +45,8 @@ const ArtworkScreen = () => {
   }, []);
 
   const fetchArtworks = async () => {
-    if (!token) {
-      Alert.alert("Error", "Please log in to access artworks.");
-      return;
-    }
-    setRefreshing(true);
-    setLoading(true);
     try {
-      const data = await getArtworks(token);
+      const data = await getAdminArtworks(token);
       setArtworks(data.artworks || []);
     } catch (err) {
       setError(err.message || "Failed to load artworks");

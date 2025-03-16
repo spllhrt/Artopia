@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { getUserProfile, updateUserProfile, updatePassword } from "../api/api";
+import { getUserProfile, updateUserProfile, updatePassword } from "../api/authApi";
 import * as ImagePicker from "expo-image-picker";
 import { updateUser } from "../redux/authSlice";
 import { MaterialIcons } from "@expo/vector-icons";

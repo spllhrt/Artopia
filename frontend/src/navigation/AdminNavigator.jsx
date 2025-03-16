@@ -6,10 +6,8 @@ import { useSelector } from "react-redux";
 import { View, Text, StyleSheet } from "react-native";
 
 import Dashboard from "../screens/admin/DashboardScreen";
-import Analytics from "../screens/admin/AnalyticScreen";
 import Artworks from "../screens/admin/ArtworkScreen";
 import Materials from "../screens/admin/MaterialScreen";
-import Reviews from "../screens/admin/ReviewScreen";
 import Orders from "../screens/admin/OrderScreen";
 import Profile from "../screens/ProfileScreen";
 import Settings from "../screens/SettingsScreen";
@@ -24,7 +22,6 @@ const BottomTabNavigator = () => (
       tabBarIcon: ({ color, size }) => {
         let icons = {
           Dashboard: "grid-outline",
-          Analytics: "bar-chart-outline",
           Artworks: "color-palette-outline",
           Materials: "cube-outline",
         };
@@ -33,7 +30,6 @@ const BottomTabNavigator = () => (
     })}
   >
     <BottomTabs.Screen name="Dashboard" component={Dashboard} />
-    <BottomTabs.Screen name="Analytics" component={Analytics} />
     <BottomTabs.Screen name="Artworks" component={Artworks} />
     <BottomTabs.Screen name="Materials" component={Materials} />
   </BottomTabs.Navigator>
@@ -64,7 +60,6 @@ const AdminNavigator = () => (
       drawerContent={(props) => <CustomDrawerContent {...props} />}
     >
     <Drawer.Screen name="Home" component={BottomTabNavigator} />
-    <Drawer.Screen name="Reviews" component={Reviews} />
     <Drawer.Screen name="Orders" component={Orders} />
     <Drawer.Screen 
         name="Profile" 

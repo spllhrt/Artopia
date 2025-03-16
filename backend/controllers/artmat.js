@@ -3,25 +3,37 @@ const Artmat = require('../models/artmat')
 const APIFeatures = require('../utils/apiFeatures');
 const cloudinary = require("cloudinary").v2;
 
-exports.getArtmats = async (req, res) => {
+exports.getArtmats = async (req, res, next) => {
     
-    const resPerPage = 4;
-    const artmatsCount = await Artmat.countDocuments();
-    const apiFeatures = new APIFeatures(Artmat.find(), req.query).search().filter();
-    apiFeatures.pagination(resPerPage);
-    const artmats = await apiFeatures.query;
-    let filteredArtmatsCount = artmats.length;
+//     const resPerPage = 4;
+//     const artmatsCount = await Artmat.countDocuments();
+//     const apiFeatures = new APIFeatures(Artmat.find(), req.query).search().filter();
+//     apiFeatures.pagination(resPerPage);
+//     const artmats = await apiFeatures.query;
+//     let filteredArtmatsCount = artmats.length;
 
-    if (!artmats) 
-        return res.status(400).json({message: 'error loading Artmats'})
-   return res.status(200).json({
-        success: true,
-        artmats,
-        filteredArtmatsCount,
-        resPerPage,
-        artmatsCount,
+//     if (!artmats) 
+//         return res.status(400).json({message: 'error loading Artmats'})
+//    return res.status(200).json({
+//         success: true,
+//         artmats,
+//         filteredArtmatsCount,
+//         resPerPage,
+//         artmatsCount,
         
-    })
+//     })
+
+        const artmats = await Artmat.find();
+            if (!artmats) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Artmat not found'
+                })
+            }
+            return res.status(200).json({
+                success: true,
+                artmats
+            })
 }
 
 exports.getSingleArtmat = async (req, res, next) => {

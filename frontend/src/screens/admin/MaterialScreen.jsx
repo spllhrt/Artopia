@@ -1,20 +1,358 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Button,
+  ActivityIndicator,
+  FlatList,
+  Alert,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  StyleSheet,
+  Image,
+  ScrollView,
+} from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { useSelector } from 'react-redux';
+import * as ImagePicker from 'expo-image-picker';
+import { getAdminArtmats, deleteArtmat, createArtmat, updateArtmat } from '../../api/matApi';
+import { AntDesign } from '@expo/vector-icons';
 
 const MaterialScreen = () => {
+  const token = useSelector((state) => state.auth.token);
+
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Material fields
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('');
+  const [images, setImages] = useState([]);
+
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
+
+  const fetchMaterials = async () => {
+    try {
+      setLoading(true);
+      const data = await getAdminArtmats();
+      setMaterials(data.artmats || []);
+    } catch (err) {
+      setError(err.message || "Failed to load art materials");
+      setMaterials([]);
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
+  };
+
+  const pickImages = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 1,
+    });
+    if (!result.canceled) {
+      setImages(result.assets.map((asset) => asset.uri));
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!token) {
+      Alert.alert("Error", "You must be logged in to delete a material.");
+      return;
+    }
+
+    Alert.alert("Confirm Delete", "Are you sure you want to delete this material?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        onPress: async () => {
+          try {
+            await deleteArtmat(id);
+            setMaterials((prev) => prev.filter((mat) => mat._id !== id));
+          } catch (err) {
+            Alert.alert("Error", err.message || "Failed to delete material");
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleAddMaterial = async () => {
+    if (loading) return;
+
+    if (!name || !description || !category || !price || !stock || images.length === 0) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+
+    if (!token) {
+      Alert.alert("Error", "You must be logged in to add material.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("category", category);
+      formData.append("price", price);
+      formData.append("stock", stock);
+
+      images.forEach((imageUri, index) => {
+        let filename = imageUri.split('/').pop();
+        let match = /\.(\w+)$/.exec(filename);
+        let type = match ? `image/${match[1]}` : "image";
+
+        formData.append(`images`, {
+          uri: imageUri,
+          name: filename,
+          type,
+        });
+      });
+
+      await createArtmat(formData);
+      await fetchMaterials();
+      closeModal();
+    } catch (err) {
+      Alert.alert("Error", err.message || "Failed to add material");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateMaterial = async () => {
+    if (!name || !description || !category || !price || !stock || images.length === 0) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+
+    if (!token) {
+      Alert.alert("Error", "You must be logged in to update material.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("category", category);
+      formData.append("price", price);
+      formData.append("stock", stock);
+
+      images.forEach((imageUri, index) => {
+        if (imageUri.startsWith("http")) {
+          formData.append(`existingImages[]`, imageUri);
+        } else {
+          let filename = imageUri.split("/").pop();
+          let match = /\.(\w+)$/.exec(filename);
+          let type = match ? `image/${match[1]}` : "image";
+
+          formData.append(`images`, {
+            uri: imageUri,
+            name: filename,
+            type,
+          });
+        }
+      });
+
+      const updatedMaterial = await updateArtmat(selectedMaterial._id, formData);
+
+      setMaterials((prev) =>
+        prev.map((mat) => (mat._id === updatedMaterial._id ? updatedMaterial : mat))
+      );
+      
+      await fetchMaterials();
+      closeModal();
+    } catch (err) {
+      Alert.alert("Error", err.message || "Failed to update material");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openModal = (type, material = null) => {
+    setModalType(type);
+    setSelectedMaterial(material);
+    setName(material?.name || '');
+    setDescription(material?.description || '');
+    setCategory(material?.category || '');
+    setPrice(material?.price?.toString() || '');
+    setStock(material?.stock?.toString() || '');
+    setImages(material?.images?.map(img => img.url) || []);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedMaterial(null);
+    setImages([]);
+  };
+
+  if (loading) return <ActivityIndicator size="large" color="#0000ff" />;
+  if (error) return <Text style={{ color: "red" }}>{error}</Text>;
+
   return (
     <View style={styles.container}>
-      <Text>Materials Screen</Text>
+      <Text style={styles.header}>Art Materials</Text>
+
+      <FlatList
+        data={materials}
+        keyExtractor={(item, index) => (item._id ? item._id.toString() : index.toString())}
+        renderItem={({ item }) => (
+          <View style={styles.materialCard}>
+            <ScrollView horizontal>
+              {item.images?.map((img, index) => (
+                <Image key={img.url || index} source={{ uri: img.url }} style={styles.materialImage} />
+              ))}
+            </ScrollView>
+            <Text style={styles.materialTitle}>{item.name}</Text>
+            <Text style={styles.materialDetails}>Category: {item.category}</Text>
+            <Text style={styles.materialDetails}>Price: ₱{item.price}</Text>
+            <Text style={styles.materialDetails}>Stock: {item.stock} units</Text>
+            <View style={styles.buttonRow}>
+              <Button title="Edit" onPress={() => openModal('update', item)} color="orange" />
+              <Button title="Delete" onPress={() => handleDelete(item._id)} color="red" />
+            </View>
+          </View>
+        )}
+        refreshing={refreshing}
+        onRefresh={fetchMaterials}
+      />
+
+      {/* Floating Add Button */}
+      <TouchableOpacity style={styles.addButton} onPress={() => openModal("add")}>
+        <AntDesign name="plus" size={24} color="white" />
+      </TouchableOpacity>
+
+      {/* Modal for Add, Update */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{modalType === "add" ? "Add Material" : "Edit Material"}</Text>
+            <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
+            <TextInput style={styles.input} placeholder="Description" value={description} onChangeText={setDescription} multiline />
+            <TextInput style={styles.input} placeholder="Category" value={category} onChangeText={setCategory} />
+            <TextInput style={styles.input} placeholder="Price" value={price} onChangeText={setPrice} keyboardType="numeric" />
+            <TextInput style={styles.input} placeholder="Stock" value={stock} onChangeText={setStock} keyboardType="numeric" />
+            <Button title="Pick Images" onPress={pickImages} />
+            <ScrollView horizontal>
+              {images.map((uri, index) => (
+                <Image key={index} source={{ uri }} style={styles.previewImage} />
+              ))}
+            </ScrollView>
+            <Button title={modalType === "add" ? "Add" : "Update"} onPress={modalType === "add" ? handleAddMaterial : handleUpdateMaterial} />
+            <Button title="Close" onPress={closeModal} color="gray" />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
+export default MaterialScreen;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 20,
+    backgroundColor: '#f4f4f4',
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  materialCard: {
+    padding: 15,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 10,
+    elevation: 2,
+  },
+  materialTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  materialDetails: {
+    fontSize: 14,
+    marginBottom: 4,
+    color: '#333',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  addButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    backgroundColor: '#007AFF',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  input: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  materialImage: {
+    width: 100,
+    height: 100,
+    marginRight: 5,
+    borderRadius: 5,
+  },
+  previewImage: {
+    width: 100,
+    height: 100,
+    marginRight: 5,
+    borderRadius: 5,
   },
 });
-
-export default MaterialScreen;

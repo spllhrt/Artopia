@@ -3,25 +3,37 @@ const Artwork = require('../models/artwork')
 const APIFeatures = require('../utils/apiFeatures');
 const cloudinary = require("cloudinary").v2;
 
-exports.getArtworks = async (req, res) => {
+exports.getArtworks = async (req, res, next) => {
     
-	const resPerPage = 4;
-    const artworksCount = await Artwork.countDocuments();
-	const apiFeatures = new APIFeatures(Artwork.find(), req.query).search().filter();
-	apiFeatures.pagination(resPerPage);
-	const artworks = await apiFeatures.query;
-	let filteredArtworksCount = artworks.length;
+// 	const resPerPage = 4;
+//     const artworksCount = await Artwork.countDocuments();
+// 	const apiFeatures = new APIFeatures(Artwork.find(), req.query).search().filter();
+// 	apiFeatures.pagination(resPerPage);
+// 	const artworks = await apiFeatures.query;
+// 	let filteredArtworksCount = artworks.length;
 
-	if (!artworks) 
-        return res.status(400).json({message: 'error loading Artworks'})
-   return res.status(200).json({
-        success: true,
-        artworks,
-		filteredArtworksCount,
-		resPerPage,
-		artworksCount,
+// 	if (!artworks) 
+//         return res.status(400).json({message: 'error loading Artworks'})
+//    return res.status(200).json({
+//         success: true,
+//         artworks,
+// 		filteredArtworksCount,
+// 		resPerPage,
+// 		artworksCount,
 		
-	})
+// 	})
+        const artworks = await Artwork.find();
+        if (!artworks) {
+            return res.status(404).json({
+                success: false,
+                message: 'Artwork not found'
+            })
+        }
+        return res.status(200).json({
+            success: true,
+            artworks
+        })
+
 }
 
 exports.getSingleArtwork = async (req, res, next) => {

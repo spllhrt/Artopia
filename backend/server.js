@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json({limit:'50mb'}));
 app.use(express.urlencoded({limit: "50mb", extended: true }));
 const corsOptions = {
-    origin: `http://192.168.55.103:${PORT}`,  // eto babaguhin
+    origin: `http://192.168.1.5:${PORT}`,  // eto babaguhin
     credentials: true, 
   };
   
@@ -24,6 +24,7 @@ const corsOptions = {
 
 const auth = require('./routes/auth');
 const artwork = require('./routes/artwork');
+const artmat = require('./routes/artmat');
 
 
 connectDatabase();
@@ -36,7 +37,8 @@ cloudinary.config({
 
 app.use('/api/', auth);
 app.use('/api/', artwork);
+app.use('/api/', artmat);
 
 app.listen(PORT, () => {
-    console.log(`✅ Server running on http://192.168.55.103:${PORT}`);
+    console.log(`✅ Server running on http://192.168.1.5:${PORT}`);
 });

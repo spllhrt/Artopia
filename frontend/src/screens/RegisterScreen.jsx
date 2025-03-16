@@ -3,7 +3,7 @@ import { View, Text, Alert, StyleSheet, Image } from "react-native";
 import { TextInput, Button } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { useDispatch } from "react-redux";
-import { registerUser } from "../api/api";
+import { registerUser } from "../api/authApi";
 import { useNavigation } from "@react-navigation/native";
 
 const RegisterScreen = () => {

@@ -1,72 +1,76 @@
-// artApi.js
 import axios from "axios";
+import { getToken } from "../utils/secureStorage";
 
-const API_URL = "http://192.168.55.103:4000/api";
+const API_URL = "http://192.168.1.5:4000/api";
 
-export const getArtworks = async (token) => {
-    try {
-      if (!token) {
-        throw new Error("Unauthorized: Please log in first.");
-      }
-  
-      const response = await axios.get(`${API_URL}/admin/artworks`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ Correctly pass token
-        },
-      });
-  
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: "Something went wrong fetching artworks" };
-    }
-  };
+const apiClient = axios.create({
+  baseURL: API_URL,
+});
+
+apiClient.interceptors.request.use(async (config) => {
+  const token = await getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const getArtworks = async () => {
+  try {
+    const response = await apiClient.get("/artworks");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Failed to fetch artworks" };
+  }
+};
+
+export const getAdminArtworks = async () => {
+  try {
+    const response = await apiClient.get("/admin/artworks");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Failed to fetch artworks" };
+  }
+};
 
 export const getSingleArtwork = async (id) => {
   try {
-    const response = await axios.get(`${API_URL}/artwork/${id}`);
+    const response = await apiClient.get(`/artwork/${id}`);
     return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "Something went wrong fetching artwork" };
+    throw error.response?.data || { message: "Failed to fetch artwork" };
   }
 };
 
-export const createArtwork = async (formData, token) => {
+export const createArtwork = async (formData) => {
   try {
-    const response = await axios.post(`${API_URL}/admin/artwork/new`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await apiClient.post("/admin/artwork/new", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "Something went wrong creating artwork" };
+    throw error.response?.data || { message: "Failed to create artwork" };
   }
 };
 
-export const updateArtwork = async (id, formData, token) => {
+export const updateArtwork = async (id, formData) => {
   try {
-    const response = await axios.put(`${API_URL}/admin/artwork/${id}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await apiClient.put(`/admin/artwork/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "Something went wrong updating artwork" };
+    throw error.response?.data || { message: "Failed to update artwork" };
   }
 };
 
-export const deleteArtwork = async (id, token) => {
+export const deleteArtwork = async (id) => {
   try {
-    const response = await axios.delete(`${API_URL}/admin/artwork/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.delete(`/admin/artwork/${id}`);
     return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "Something went wrong deleting artwork" };
+    throw error.response?.data || { message: "Failed to delete artwork" };
   }
 };
+
+export default apiClient;
