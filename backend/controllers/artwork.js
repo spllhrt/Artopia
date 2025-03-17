@@ -1,6 +1,5 @@
 const Artwork = require('../models/artwork')
 // const Order = require('../models/order');
-const APIFeatures = require('../utils/apiFeatures');
 const cloudinary = require("cloudinary").v2;
 
 exports.getArtworks = async (req, res, next) => {
