@@ -49,17 +49,21 @@ export const getUserProfile = async () => {
   }
 };
 
-export const updateUserProfile = async (formData) => {
+export const updateUserProfile = async (data) => {
   try {
-    const response = await apiClient.put("/me/update", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    // Check if data is FormData or regular object
+    const isFormData = data instanceof FormData;
+    
+    const headers = isFormData 
+      ? { "Content-Type": "multipart/form-data" }
+      : { "Content-Type": "application/json" };
+    
+    const response = await apiClient.put("/me/update", data, { headers });
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: "Profile update failed" };
   }
 };
-
 export const updatePassword = async (oldPassword, newPassword) => {
   try {
     const response = await apiClient.put("/password/update", {

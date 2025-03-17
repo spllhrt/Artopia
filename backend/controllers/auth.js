@@ -88,22 +88,33 @@ exports.updateProfile = async (req, res, next) => {
             email: req.body.email
         };
 
-        if (req.body.avatar && req.body.avatar !== '') {
-            let user = await User.findById(req.user.id);
-            
+        // Check if there's a file uploaded
+        if (req.file && req.file.buffer) {
+            // If user has an existing avatar, delete it first
+            const user = await User.findById(req.user.id);
             if (user.avatar && user.avatar.public_id) {
                 const image_id = user.avatar.public_id;
                 console.log("Removing old avatar from Cloudinary...");
-
-                const destroyResult = await cloudinary.v2.uploader.destroy(image_id);
+                const destroyResult = await cloudinary.uploader.destroy(image_id);
                 console.log("Old avatar removed:", destroyResult);
             }
 
+            // Upload new avatar
             console.log("Uploading new avatar to Cloudinary...");
-            const result = await cloudinary.v2.uploader.upload(req.body.avatar, {
-                folder: 'avatars',
-                width: 150,
-                crop: "scale"
+            const result = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    { folder: "avatars", width: 150, crop: "scale" },
+                    (error, result) => {
+                        if (error) {
+                            console.error("Cloudinary Upload Error:", error);
+                            reject(error);
+                        } else {
+                            console.log("Cloudinary Upload Success:", result);
+                            resolve(result);
+                        }
+                    }
+                );
+                stream.end(req.file.buffer);
             });
 
             newUserData.avatar = {
@@ -130,7 +141,6 @@ exports.updateProfile = async (req, res, next) => {
         return res.status(500).json({ error: error.message });
     }
 };
-
 exports.updatePassword = async (req, res, next) => {
     try {
         const { oldPassword, password } = req.body;

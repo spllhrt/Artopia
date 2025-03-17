@@ -18,63 +18,120 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 const ProfileScreen = () => {
   const dispatch = useDispatch();
-  const { token, user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [avatar, setAvatar] = useState(null);
+  const [imageKey, setImageKey] = useState(Date.now());
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       setLoading(true);
       try {
-        const response = await getUserProfile(token);
+        // No longer need to pass token - handled by interceptors
+        const response = await getUserProfile();
         dispatch(updateUser(response.user));
+        // Set avatar from user profile on initial load
+        if (response.user?.avatar?.url) {
+          // Add a cache buster to the URL
+          const url = addCacheBuster(response.user.avatar.url);
+          setAvatar(url);
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchUserProfile();
-  }, [token]);
+  }, [dispatch]);
 
   useEffect(() => {
     if (user) {
       setName(user.name);
       setEmail(user.email);
+      // Update avatar if user has one and we don't have a local override
+      if (user.avatar?.url && (!avatar || avatar.includes(user.avatar.url.split('?')[0]))) {
+        // Add a cache buster to the URL
+        const url = addCacheBuster(user.avatar.url);
+        setAvatar(url);
+        setImageKey(Date.now());
+      }
     }
   }, [user]);
 
-  const handleAvatarChange = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync();
-    if (!result.cancelled) {
-      setAvatar(result.uri);
-    }
+  // Helper function to add cache buster to URLs
+  const addCacheBuster = (url) => {
+    const timestamp = Date.now();
+    return url.includes('?') 
+      ? `${url}&t=${timestamp}` 
+      : `${url}?t=${timestamp}`;
   };
 
+  const handleAvatarChange = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (!permissionResult.granted) {
+        Alert.alert("Permission Required", "Please grant permission to access your photos");
+        return;
+      }
+      
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      
+      if (!result.canceled && result.assets && result.assets[0]) {
+        // The API changed in newer versions of expo-image-picker
+        setAvatar(result.assets[0].uri);
+        setImageKey(Date.now()); // Force image component to update
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to select image");
+    }
+  };
   const handleUpdateProfile = async () => {
     setLoading(true);
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("email", email);
-
-    if (avatar) {
-      const avatarUri = avatar;
-      const fileType = avatarUri.split(".").pop();
-      formData.append("avatar", {
-        uri: avatarUri,
-        name: `avatar.${fileType}`,
-        type: `image/${fileType}`,
-      });
-    }
-
     try {
-      const updatedUser = await updateUserProfile(formData, token);
-      dispatch(updateUser(updatedUser.user));
+      let response;
+      
+      if (avatar && !avatar.startsWith('http')) {
+        // If there's a new avatar, use FormData
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("email", email);
+        
+        // Get file extension
+        const fileType = avatar.split(".").pop();
+        
+        formData.append("avatar", {
+          uri: avatar,
+          name: `avatar.${fileType}`,
+          type: `image/${fileType}`,
+        });
+        
+        response = await updateUserProfile(formData);
+      } else {
+        // If no new avatar, just send JSON data
+        response = await updateUserProfile({ name, email });
+      }
+      
+      dispatch(updateUser(response.user));
+      
+      if (response.user?.avatar?.url) {
+        // Add a cache buster to the URL
+        const url = addCacheBuster(response.user.avatar.url);
+        setAvatar(url);
+        setImageKey(Date.now());
+      }
+      
       Alert.alert("Success", "Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -83,11 +140,14 @@ const ProfileScreen = () => {
       setLoading(false);
     }
   };
-
+  
   const handleUpdatePassword = async () => {
     setLoading(true);
     try {
-      await updatePassword(oldPassword, newPassword, token);
+      // No longer need to pass token - handled by interceptors
+      await updatePassword(oldPassword, newPassword);
+      setOldPassword("");
+      setNewPassword("");
       Alert.alert("Success", "Password updated successfully");
     } catch (error) {
       console.error("Error updating password:", error.response?.data || error.message);
@@ -97,30 +157,33 @@ const ProfileScreen = () => {
     }
   };
 
+  // Determine the image source to use
+  const imageSource = avatar 
+    ? { uri: avatar, cache: 'reload', key: imageKey.toString() }
+    : null; // Default avatar image
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.profileCard}>
         <View style={styles.avatarContainer}>
-          <Image source={{ uri: avatar || user?.avatar?.url }} style={styles.avatar} />
+          <Image 
+            source={imageSource}
+            style={styles.avatar}
+          />
           <TouchableOpacity style={styles.avatarEdit} onPress={handleAvatarChange}>
             <MaterialIcons name="edit" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
-
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.email}>{email}</Text>
       </View>
-
       <View style={styles.formContainer}>
         <TextInput value={name} onChangeText={setName} placeholder="Full Name" style={styles.input} />
         <TextInput value={email} onChangeText={setEmail} placeholder="Email Address" style={styles.input} />
-
         <TouchableOpacity style={styles.button} onPress={handleUpdateProfile} disabled={loading}>
           <Text style={styles.buttonText}>Save Changes</Text>
         </TouchableOpacity>
-
         <View style={styles.divider} />
-
         <Text style={styles.sectionTitle}>Change Password</Text>
         <TextInput
           value={oldPassword}
@@ -136,16 +199,15 @@ const ProfileScreen = () => {
           secureTextEntry
           style={styles.input}
         />
-
         <TouchableOpacity style={styles.button} onPress={handleUpdatePassword} disabled={loading}>
           <Text style={styles.buttonText}>Update Password</Text>
         </TouchableOpacity>
       </View>
-
       {loading && <ActivityIndicator size="large" color="#4CAF50" style={styles.loadingIndicator} />}
     </ScrollView>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 20,
@@ -243,6 +305,5 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
-
 
 export default ProfileScreen;
