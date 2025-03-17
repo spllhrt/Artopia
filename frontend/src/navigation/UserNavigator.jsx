@@ -44,12 +44,12 @@ const ShopStackNavigator = () => {
       <ShopStack.Screen 
         name="ArtmatsScreen" 
         component={ArtmatsScreen} 
-        options={{ title: "Art Materials" }}
+        options={{ headerShown: false }}
       />
       <ShopStack.Screen 
         name="ArtworksScreen" 
         component={ArtworksScreen} 
-        options={{ title: "Artworks" }}
+        options={{ headerShown: false }}
       />
       <ShopStack.Screen 
         name="ArtworkDetailScreen" 

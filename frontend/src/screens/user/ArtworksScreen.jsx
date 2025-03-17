@@ -492,7 +492,7 @@ loaderContainer: {
   // Search and filter styles
   searchFilterContainer: {
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: 2,
     alignItems: "center",
   },
   searchInputContainer: {
@@ -528,7 +528,7 @@ loaderContainer: {
     fontWeight: "bold",
   },
   categoriesContainer: {
-    paddingVertical: 8,
+    paddingVertical: 20,
     flexDirection: 'row',
     alignItems: 'center', 
   },
