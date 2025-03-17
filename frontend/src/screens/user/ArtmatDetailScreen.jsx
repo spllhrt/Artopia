@@ -13,21 +13,26 @@ import {
   Modal,
   SafeAreaView
 } from "react-native";
-import { useSelector } from "react-redux"; 
+import { useSelector, useDispatch } from "react-redux"; 
+import { setSelectedArtmat, setLoading, setError } from "../../redux/slices/matSlice";
 import { addArtmatToCart } from "../../utils/cart"; 
 import { getSingleArtmat } from "../../api/matApi";
 const { width, height } = Dimensions.get("window");
 
 const ArtmatDetailScreen = ({ route, navigation }) => {
   const { id } = route.params;
-  const [artmat, setArtmat] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  
+  // Get data from Redux store
+  const artmat = useSelector(state => state.artmats.selectedArtmat);
+  const loading = useSelector(state => state.artmats.loading);
+  const error = useSelector(state => state.artmats.error);
+  const userId = useSelector(state => state.auth.user?._id || state.auth.user?.id);
+  
+  // Local state
   const [imageIndex, setImageIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [quantity, setQuantity] = useState(1);
-
-  const userId = useSelector(state => state.auth.user?._id || state.auth.user?.id);
 
   useEffect(() => {
     fetchArtmatDetails();
@@ -42,20 +47,20 @@ const ArtmatDetailScreen = ({ route, navigation }) => {
 
   const fetchArtmatDetails = async () => {
     try {
-      setLoading(true);
+      dispatch(setLoading(true));
       const response = await getSingleArtmat(id);
-      setArtmat(response.artmat);
-      setError(null);
+      dispatch(setSelectedArtmat(response.artmat));
+      dispatch(setError(null));
     } catch (err) {
       console.error("Error details:", JSON.stringify(err, null, 2));
-      setError(err.message || "Failed to load art material details");
+      dispatch(setError(err.message || "Failed to load art material details"));
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
   const getImageUri = (artmat) => {
-    if (!artmat.images) return null;
+    if (!artmat?.images) return null;
     
     if (Array.isArray(artmat.images) && artmat.images.length > 0) {
       if (typeof artmat.images[imageIndex] === 'string') {
@@ -100,18 +105,18 @@ const ArtmatDetailScreen = ({ route, navigation }) => {
 
   const handleAddToCart = async () => {
     try {
-
-        if (!userId) {
-              Alert.alert(
-                "Login Required",
-                "Please log in to add items to your cart.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  { text: "Log In", onPress: () => navigation.navigate("Login") }
-                ]
-              );
-              return;
-            }
+      if (!userId) {
+        Alert.alert(
+          "Login Required",
+          "Please log in to add items to your cart.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Log In", onPress: () => navigation.navigate("Login") }
+          ]
+        );
+        return;
+      }
+      
       // Check if artmat is valid and has an id
       if (!artmat || (!artmat.id && !artmat._id)) {
         console.error('Invalid artwork object:', artmat);
@@ -127,6 +132,7 @@ const ArtmatDetailScreen = ({ route, navigation }) => {
         ...artmat,
         id: artmat.id || artmat._id // Use existing id or _id as fallback
       };
+      
       // Log the art material being added for debugging
       console.log('Adding art material to cart:', JSON.stringify(artmat));
       console.log('User ID:', userId);
@@ -458,6 +464,7 @@ const ArtmatDetailScreen = ({ route, navigation }) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,

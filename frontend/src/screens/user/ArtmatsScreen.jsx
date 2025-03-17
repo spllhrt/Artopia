@@ -12,16 +12,19 @@ import {
   Modal,
   ScrollView
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import { getArtmats } from "../../api/matApi";
+import { setArtmats, setLoading, setError } from "../../redux/matSlice";
 
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 48) / 2;
 
 const ArtmatsScreen = ({ navigation }) => {
-  const [artmats, setArtmats] = useState([]);
+  const dispatch = useDispatch();
+  const { artmats, loading, error } = useSelector(state => state.artmats);
+  
+  // Local state for UI and filtering
   const [filteredArtmats, setFilteredArtmats] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [listKey, setListKey] = useState("grid");
   
   // Search and Filter states
@@ -46,11 +49,11 @@ const ArtmatsScreen = ({ navigation }) => {
 
   const fetchArtmats = async () => {
     try {
-      setLoading(true);
+      dispatch(setLoading(true));
       const response = await getArtmats();
       
       const artmatsData = response.artmats || [];
-      setArtmats(artmatsData);
+      dispatch(setArtmats(artmatsData));
       setFilteredArtmats(artmatsData);
       
       // Extract unique categories for filter
@@ -64,12 +67,12 @@ const ArtmatsScreen = ({ navigation }) => {
         setTempPriceRange({ min: 0, max: maxPrice });
       }
       
-      setError(null);
+      dispatch(setError(null));
     } catch (err) {
       console.error("Error details:", JSON.stringify(err, null, 2));
-      setError(err.message || "Failed to load art materials");
+      dispatch(setError(err.message || "Failed to load art materials"));
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
@@ -406,6 +409,7 @@ const ArtmatsScreen = ({ navigation }) => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   // Base container styles

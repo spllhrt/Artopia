@@ -13,21 +13,25 @@ import {
   Modal,
   SafeAreaView
 } from "react-native";
-import { useSelector } from "react-redux"; // Import useSelector for accessing Redux state
+import { useSelector, useDispatch } from "react-redux";
 import { addArtworkToCart } from "../../utils/cart"; 
 import { getSingleArtwork } from "../../api/artApi";
+import { setSelectedArtwork, setLoading, setError } from "../../redux/artSlice";
 const { width, height } = Dimensions.get("window");
 
 const ArtworkDetailScreen = ({ route, navigation }) => {
   const { id } = route.params;
-  const [artwork, setArtwork] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  
+  // Get data from Redux store
+  const artwork = useSelector(state => state.artworks.selectedArtwork);
+  const loading = useSelector(state => state.artworks.loading);
+  const error = useSelector(state => state.artworks.error);
+  const userId = useSelector(state => state.auth.user?._id || state.auth.user?.id);
+  
+  // Local component state for UI features
   const [imageIndex, setImageIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
-  
-  // Get user ID from Redux store
-  const userId = useSelector(state => state.auth.user?._id || state.auth.user?.id);
 
   useEffect(() => {
     fetchArtworkDetails();
@@ -42,20 +46,20 @@ const ArtworkDetailScreen = ({ route, navigation }) => {
 
   const fetchArtworkDetails = async () => {
     try {
-      setLoading(true);
+      dispatch(setLoading(true));
       const response = await getSingleArtwork(id);
-      setArtwork(response.artwork);
-      setError(null);
+      dispatch(setSelectedArtwork(response.artwork));
+      dispatch(setError(null));
     } catch (err) {
       console.error("Error details:", JSON.stringify(err, null, 2));
-      setError(err.message || "Failed to load artwork details");
+      dispatch(setError(err.message || "Failed to load artwork details"));
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
   const getImageUri = (artwork) => {
-    if (!artwork.images) return null;
+    if (!artwork?.images) return null;
     
     if (Array.isArray(artwork.images) && artwork.images.length > 0) {
       if (typeof artwork.images[imageIndex] === 'string') {
@@ -71,6 +75,7 @@ const ArtworkDetailScreen = ({ route, navigation }) => {
   };
 
   const formatPrice = (price) => {
+    if (!price) return "0";
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
@@ -122,7 +127,7 @@ const ArtworkDetailScreen = ({ route, navigation }) => {
       console.log('Adding artwork to cart:', JSON.stringify(artworkWithId));
       console.log('User ID:', userId);
       
-      // Add artwork to cart with user ID (remove the quantity parameter)
+      // Add artwork to cart with user ID
       const result = await addArtworkToCart(artworkWithId, userId);
       
       if (result.success) {

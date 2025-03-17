@@ -13,19 +13,17 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import { getAdminArtmats, deleteArtmat, createArtmat, updateArtmat } from '../../api/matApi';
 import { AntDesign } from '@expo/vector-icons';
+import { setArtmats, setSelectedArtmat, setLoading, setError } from '../../redux/matSlice';
 
 const MaterialScreen = () => {
+  const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
+  const { artmats, selectedArtmat, loading, error } = useSelector((state) => state.artmats);
 
-  const [materials, setMaterials] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -42,17 +40,27 @@ const MaterialScreen = () => {
     fetchMaterials();
   }, []);
 
+  useEffect(() => {
+    if (selectedArtmat) {
+      setName(selectedArtmat.name || '');
+      setDescription(selectedArtmat.description || '');
+      setCategory(selectedArtmat.category || '');
+      setPrice(selectedArtmat.price?.toString() || '');
+      setStock(selectedArtmat.stock?.toString() || '');
+      setImages(selectedArtmat.images?.map(img => img.url) || []);
+    }
+  }, [selectedArtmat]);
+
   const fetchMaterials = async () => {
     try {
-      setLoading(true);
+      dispatch(setLoading(true));
       const data = await getAdminArtmats();
-      setMaterials(data.artmats || []);
+      dispatch(setArtmats(data.artmats || []));
     } catch (err) {
-      setError(err.message || "Failed to load art materials");
-      setMaterials([]);
+      dispatch(setError(err.message || "Failed to load art materials"));
     } finally {
       setRefreshing(false);
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
@@ -80,7 +88,8 @@ const MaterialScreen = () => {
         onPress: async () => {
           try {
             await deleteArtmat(id);
-            setMaterials((prev) => prev.filter((mat) => mat._id !== id));
+            // Update the Redux store after successful deletion
+            dispatch(setArtmats(artmats.filter((mat) => mat._id !== id)));
           } catch (err) {
             Alert.alert("Error", err.message || "Failed to delete material");
           }
@@ -102,7 +111,7 @@ const MaterialScreen = () => {
       return;
     }
 
-    setLoading(true);
+    dispatch(setLoading(true));
 
     try {
       const formData = new FormData();
@@ -130,7 +139,7 @@ const MaterialScreen = () => {
     } catch (err) {
       Alert.alert("Error", err.message || "Failed to add material");
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
@@ -145,7 +154,7 @@ const MaterialScreen = () => {
       return;
     }
 
-    setLoading(true);
+    dispatch(setLoading(true));
 
     try {
       const formData = new FormData();
@@ -171,36 +180,34 @@ const MaterialScreen = () => {
         }
       });
 
-      const updatedMaterial = await updateArtmat(selectedMaterial._id, formData);
+      const updatedMaterial = await updateArtmat(selectedArtmat._id, formData);
 
-      setMaterials((prev) =>
-        prev.map((mat) => (mat._id === updatedMaterial._id ? updatedMaterial : mat))
-      );
+      // Update the Redux store after successful update
+      dispatch(setArtmats(artmats.map((mat) => (mat._id === updatedMaterial._id ? updatedMaterial : mat))));
       
       await fetchMaterials();
       closeModal();
     } catch (err) {
       Alert.alert("Error", err.message || "Failed to update material");
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
   const openModal = (type, material = null) => {
     setModalType(type);
-    setSelectedMaterial(material);
-    setName(material?.name || '');
-    setDescription(material?.description || '');
-    setCategory(material?.category || '');
-    setPrice(material?.price?.toString() || '');
-    setStock(material?.stock?.toString() || '');
-    setImages(material?.images?.map(img => img.url) || []);
+    dispatch(setSelectedArtmat(material));
     setModalVisible(true);
   };
 
   const closeModal = () => {
     setModalVisible(false);
-    setSelectedMaterial(null);
+    dispatch(setSelectedArtmat(null));
+    setName('');
+    setDescription('');
+    setCategory('');
+    setPrice('');
+    setStock('');
     setImages([]);
   };
 
@@ -212,7 +219,7 @@ const MaterialScreen = () => {
       <Text style={styles.header}>Art Materials</Text>
 
       <FlatList
-        data={materials}
+        data={artmats}
         keyExtractor={(item, index) => (item._id ? item._id.toString() : index.toString())}
         renderItem={({ item }) => (
           <View style={styles.materialCard}>

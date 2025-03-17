@@ -14,23 +14,23 @@ import {
   ScrollView,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import { getAdminArtworks, deleteArtwork, createArtwork, updateArtwork } from '../../api/artApi';
 import { AntDesign } from '@expo/vector-icons';
+import { setArtworks, setSelectedArtwork, setLoading, setError } from '../../redux/artSlice';
 
 const ArtworkScreen = () => {
-  const token = useSelector((state) => state.auth.token); 
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
+  const { artworks, selectedArtwork, loading, error } = useSelector((state) => state.artworks);
 
-  const [artworks, setArtworks] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [selectedArtwork, setSelectedArtwork] = useState(null);
+  // Local state for UI control and form inputs
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalType, setModalType] = useState(''); 
+  const [modalType, setModalType] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  // Artwork fields
+  // Artwork form fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -44,20 +44,34 @@ const ArtworkScreen = () => {
     fetchArtworks();
   }, []);
 
+  useEffect(() => {
+    // Update form fields when selectedArtwork changes
+    if (selectedArtwork) {
+      setTitle(selectedArtwork.title || '');
+      setDescription(selectedArtwork.description || '');
+      setCategory(selectedArtwork.category || '');
+      setArtist(selectedArtwork.artist || '');
+      setMedium(selectedArtwork.medium || '');
+      setPrice(selectedArtwork.price?.toString() || '');
+      setStatus(selectedArtwork.status || 'available');
+      setImages(selectedArtwork.images?.map(img => img.url) || []);
+    }
+  }, [selectedArtwork]);
+
   const fetchArtworks = async () => {
     try {
+      dispatch(setLoading(true));
       const data = await getAdminArtworks(token);
-      setArtworks(data.artworks || []);
+      dispatch(setArtworks(data.artworks || []));
+      dispatch(setError(null));
     } catch (err) {
-      setError(err.message || "Failed to load artworks");
-      setArtworks([]); 
+      dispatch(setError(err.message || "Failed to load artworks"));
+      dispatch(setArtworks([]));
     } finally {
       setRefreshing(false);
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
-  
-  
 
   const pickImages = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -69,7 +83,6 @@ const ArtworkScreen = () => {
       setImages(result.assets.map((asset) => asset.uri));
     }
   };
-
 
   const handleDelete = async (id) => {
     if (!token) {
@@ -83,9 +96,13 @@ const ArtworkScreen = () => {
         text: "Delete",
         onPress: async () => {
           try {
+            dispatch(setLoading(true));
             await deleteArtwork(id, token);
-            setArtworks((prev) => prev.filter((art) => art._id !== id));
+            // Update Redux store after successful deletion
+            dispatch(setArtworks(artworks.filter((art) => art._id !== id)));
+            dispatch(setLoading(false));
           } catch (err) {
+            dispatch(setLoading(false));
             Alert.alert("Error", err.message || "Failed to delete artwork");
           }
         },
@@ -94,20 +111,20 @@ const ArtworkScreen = () => {
   };
 
   const handleAddArtwork = async () => {
-    if (loading) return; 
-  
+    if (loading) return;
+
     if (!title || !description || !category || !artist || !medium || images.length === 0 || !price) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
-  
+
     if (!token) {
       Alert.alert("Error", "You must be logged in to add artwork.");
       return;
     }
-  
-    setLoading(true); 
-  
+
+    dispatch(setLoading(true));
+
     try {
       const formData = new FormData();
       formData.append("title", title);
@@ -117,43 +134,42 @@ const ArtworkScreen = () => {
       formData.append("medium", medium);
       formData.append("price", price);
       formData.append("status", status);
-  
+
       images.forEach((imageUri, index) => {
         let filename = imageUri.split('/').pop();
         let match = /\.(\w+)$/.exec(filename);
         let type = match ? `image/${match[1]}` : "image";
-  
+
         formData.append(`images`, {
           uri: imageUri,
           name: filename,
           type,
         });
       });
-  
+
       await createArtwork(formData, token);
       await fetchArtworks();
       closeModal();
     } catch (err) {
       Alert.alert("Error", err.message || "Failed to add artwork");
     } finally {
-      setLoading(false); 
+      dispatch(setLoading(false));
     }
   };
-  
-  
+
   const handleUpdateArtwork = async () => {
     if (!title || !description || !category || !artist || !medium || images.length === 0 || !price) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
-  
+
     if (!token) {
       Alert.alert("Error", "You must be logged in to update artwork.");
       return;
     }
-  
-    setLoading(true); // Set loading state
-  
+
+    dispatch(setLoading(true));
+
     try {
       const formData = new FormData();
       formData.append("title", title);
@@ -163,7 +179,7 @@ const ArtworkScreen = () => {
       formData.append("medium", medium);
       formData.append("price", price);
       formData.append("status", status);
-  
+
       images.forEach((imageUri, index) => {
         if (imageUri.startsWith("http")) {
           formData.append(`existingImages[]`, imageUri);
@@ -171,7 +187,7 @@ const ArtworkScreen = () => {
           let filename = imageUri.split("/").pop();
           let match = /\.(\w+)$/.exec(filename);
           let type = match ? `image/${match[1]}` : "image";
-  
+
           formData.append(`images`, {
             uri: imageUri,
             name: filename,
@@ -179,40 +195,38 @@ const ArtworkScreen = () => {
           });
         }
       });
-  
+
       const updatedArtwork = await updateArtwork(selectedArtwork._id, formData, token);
-  
-      setArtworks((prev) =>
-        prev.map((art) => (art._id === updatedArtwork._id ? updatedArtwork : art))
-      );
-      
+
+      // Update Redux store after successful update
+      dispatch(setArtworks(artworks.map((art) => (art._id === updatedArtwork._id ? updatedArtwork : art))));
       await fetchArtworks();
       closeModal();
     } catch (err) {
       Alert.alert("Error", err.message || "Failed to update artwork");
     } finally {
-      setLoading(false); // Reset loading state
+      dispatch(setLoading(false));
     }
   };
-  
 
   const openModal = (type, artwork = null) => {
     setModalType(type);
-    setSelectedArtwork(artwork);
-    setTitle(artwork?.title || '');
-    setDescription(artwork?.description || '');
-    setCategory(artwork?.category || '');
-    setArtist(artwork?.artist || '');
-    setMedium(artwork?.medium || '');
-    setPrice(artwork?.price?.toString() || '');
-    setStatus(artwork?.status || 'available');
-    setImages(artwork?.images?.map(img => img.url) || []);
+    dispatch(setSelectedArtwork(artwork));
     setModalVisible(true);
   };
 
   const closeModal = () => {
     setModalVisible(false);
-    setSelectedArtwork(null);
+    dispatch(setSelectedArtwork(null));
+    
+    // Reset form fields
+    setTitle('');
+    setDescription('');
+    setCategory('');
+    setArtist('');
+    setMedium('');
+    setPrice('');
+    setStatus('available');
     setImages([]);
   };
 
@@ -245,16 +259,18 @@ const ArtworkScreen = () => {
           </View>
         )}
         refreshing={refreshing}
-        onRefresh={fetchArtworks}
+        onRefresh={() => {
+          setRefreshing(true);
+          fetchArtworks();
+        }}
       />
-
 
       {/* Floating Add Button */}
       <TouchableOpacity style={styles.addButton} onPress={() => openModal("add")}>
         <AntDesign name="plus" size={24} color="white" />
       </TouchableOpacity>
 
-      {/* Modal for View, Add, Update */}
+      {/* Modal for Add, Update */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -265,18 +281,20 @@ const ArtworkScreen = () => {
             <TextInput style={styles.input} placeholder="Artist" value={artist} onChangeText={setArtist} />
             <TextInput style={styles.input} placeholder="Medium" value={medium} onChangeText={setMedium} />
             <TextInput style={styles.input} placeholder="Price" value={price} onChangeText={setPrice} keyboardType="numeric" />
-            <Picker selectedValue={status} onValueChange={setStatus}>
+            <Picker selectedValue={status} onValueChange={setStatus} style={styles.picker}>
               <Picker.Item label="Available" value="available" />
               <Picker.Item label="Sold" value="sold" />
             </Picker>
             <Button title="Pick Images" onPress={pickImages} />
-            <ScrollView horizontal>
+            <ScrollView horizontal style={styles.imageScrollView}>
               {images.map((uri, index) => (
                 <Image key={index} source={{ uri }} style={styles.previewImage} />
               ))}
             </ScrollView>
-            <Button title={modalType === "add" ? "Add" : "Update"} onPress={modalType === "add" ? handleAddArtwork : handleUpdateArtwork} />
-            <Button title="Close" onPress={closeModal} color="gray" />
+            <View style={styles.modalButtonContainer}>
+              <Button title={modalType === "add" ? "Add" : "Update"} onPress={modalType === "add" ? handleAddArtwork : handleUpdateArtwork} />
+              <Button title="Close" onPress={closeModal} color="gray" />
+            </View>
           </View>
         </View>
       </Modal>

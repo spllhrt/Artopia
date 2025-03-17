@@ -12,16 +12,17 @@ import {
   Modal,
   ScrollView
 } from "react-native";
+import { useSelector, useDispatch } from 'react-redux';
+import { setArtworks, setLoading, setError } from '../../redux/artSlice';
 import { getArtworks } from "../../api/artApi";
 
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 48) / 2;
 
 const ArtworksScreen = ({ navigation }) => {
-  const [artworks, setArtworks] = useState([]);
+  const dispatch = useDispatch();
+  const { artworks, loading, error } = useSelector(state => state.artworks);
   const [filteredArtworks, setFilteredArtworks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [listKey, setListKey] = useState("grid");
   
   // Search and Filter states
@@ -44,11 +45,11 @@ const ArtworksScreen = ({ navigation }) => {
 
   const fetchArtworks = async () => {
     try {
-      setLoading(true);
+      dispatch(setLoading(true));
       const response = await getArtworks();
       
       const artworksData = response.artworks || [];
-      setArtworks(artworksData);
+      dispatch(setArtworks(artworksData));
       setFilteredArtworks(artworksData);
       
       // Extract unique categories for filter
@@ -62,12 +63,12 @@ const ArtworksScreen = ({ navigation }) => {
         setTempPriceRange({ min: 0, max: maxPrice });
       }
       
-      setError(null);
+      dispatch(setError(null));
     } catch (err) {
       console.error("Error details:", JSON.stringify(err, null, 2));
-      setError(err.message || "Failed to load artworks");
+      dispatch(setError(err.message || "Failed to load artworks"));
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
