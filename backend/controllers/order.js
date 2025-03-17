@@ -1,0 +1,320 @@
+const Order = require('../models/order');
+const Artwork = require('../models/artwork');
+const Artmat = require('../models/artmat');
+
+// Create new order
+exports.newOrder = async (req, res) => {
+    try {
+        const {
+            orderItems,
+            shippingInfo,
+            itemsPrice,
+            taxPrice,
+            shippingPrice,
+            totalPrice,
+            paymentInfo
+        } = req.body;
+
+        const order = await Order.create({
+            orderItems,
+            shippingInfo,
+            itemsPrice,
+            taxPrice,
+            shippingPrice,
+            totalPrice,
+            paymentInfo,
+            paidAt: Date.now(),
+            user: req.user.id
+        });
+
+        return res.status(200).json({
+            success: true,
+            order
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Get logged in user orders
+exports.myOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({ user: req.user.id });
+        
+        if (!orders || orders.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No orders found'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            orders
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Get single order
+exports.getSingleOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id).populate('user', 'name email');
+        
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'No order found with this ID'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            order
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Get all orders - ADMIN
+exports.allOrders = async (req, res) => {
+    try {
+        const orders = await Order.find();
+        
+        if (!orders || orders.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No orders found'
+            });
+        }
+
+        let totalAmount = 0;
+        orders.forEach(order => {
+            totalAmount += order.totalPrice;
+        });
+
+        return res.status(200).json({
+            success: true,
+            totalAmount,
+            orders
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Delete order - ADMIN
+exports.deleteOrder = async (req, res) => {
+    try {
+        const order = await Order.findByIdAndDelete(req.params.id);
+        
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'No order found with this ID'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Order deleted successfully'
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+// Update order status and payment info - ADMIN
+exports.updateOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+        
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'No order found with this ID'
+            });
+        }
+
+        if (order.orderStatus === 'Delivered') {
+            return res.status(400).json({
+                success: false,
+                message: 'You have already delivered this order'
+            });
+        }
+
+        // Update payment status if included in request
+        if (req.body.paymentStatus) {
+            // Update payment info
+            order.paymentInfo.status = req.body.paymentStatus;
+            
+            // If payment is marked as paid, update paidAt timestamp
+            if (req.body.paymentStatus === 'paid') {
+                order.paidAt = Date.now();
+            } else {
+                // If payment is changed to not paid, clear the paidAt field
+                order.paidAt = null;
+            }
+        }
+
+        // Update order status if included in request
+        if (req.body.status) {
+            // Only proceed with stock updates if order is being confirmed/processed
+            if (req.body.status !== 'Cancelled' && order.orderStatus !== req.body.status) {
+                // Update stock for each item
+                for (const item of order.orderItems) {
+                    await updateStock(item.product, item.quantity, item.productType);
+                }
+            }
+
+            order.orderStatus = req.body.status;
+            
+            if (req.body.status === 'Delivered') {
+                order.deliveredAt = Date.now();
+                
+                // Auto-mark payment as paid when order is delivered
+                order.paymentInfo.status = 'paid';
+                order.paidAt = Date.now();
+            }
+        }
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Order updated successfully'
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+// Helper function to update product stock
+async function updateStock(id, quantity, productType) {
+    try {
+        // Determine which model to use based on productType
+        const ProductModel = productType === 'artwork' ? Artwork : Artmat;
+        
+        const product = await ProductModel.findById(id);
+        
+        if (!product) {
+            throw new Error(`No ${productType} found with this ID`);
+        }
+
+        // For artwork, update status to 'sold' when ordered
+        if (productType === 'artwork') {
+            product.status = 'sold';
+        } 
+        // For artmat, decrease the stock quantity
+        else {
+            if (product.stock < quantity) {
+                throw new Error('Not enough stock available');
+            }
+            product.stock = product.stock - quantity;
+        }
+
+        await product.save({ validateBeforeSave: false });
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Create order from cart items
+exports.createOrderFromCart = async (req, res) => {
+    try {
+        const {
+            cartItems,
+            shippingInfo,
+            paymentInfo
+        } = req.body;
+
+        if (!cartItems || cartItems.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No items in cart'
+            });
+        }
+
+        // Format cart items to order items
+        const orderItems = cartItems.map(item => {
+            const orderItem = {
+                productType: item.productType,
+                quantity: item.quantity,
+                price: item.product.price,
+                product: item.product.id
+            };
+
+            // Add product-specific fields
+            if (item.productType === 'artwork') {
+                orderItem.title = item.product.title;
+                orderItem.artist = item.product.artist;
+                orderItem.medium = item.product.medium;
+                orderItem.image = item.product.images && item.product.images.length > 0 ? 
+                    item.product.images[0].url : '';
+            } else {
+                orderItem.name = item.product.name;
+                orderItem.image = item.product.images && item.product.images.length > 0 ? 
+                    item.product.images[0].url : '';
+            }
+
+            return orderItem;
+        });
+
+        // Calculate prices
+        let itemsPrice = 0;
+        orderItems.forEach(item => {
+            itemsPrice += item.price * item.quantity;
+        });
+
+        const taxRate = 0.10; // 10% tax
+        const taxPrice = itemsPrice * taxRate;
+        
+        // Calculate shipping based on total price
+        const shippingPrice = itemsPrice > 100 ? 0 : 15; // Free shipping over $100
+        
+        const totalPrice = itemsPrice + taxPrice + shippingPrice;
+
+        // Create order
+        const order = await Order.create({
+            orderItems,
+            shippingInfo,
+            itemsPrice,
+            taxPrice,
+            shippingPrice,
+            totalPrice,
+            paymentInfo,
+            paidAt: Date.now(),
+            user: req.user.id
+        });
+
+        return res.status(200).json({
+            success: true,
+            order
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

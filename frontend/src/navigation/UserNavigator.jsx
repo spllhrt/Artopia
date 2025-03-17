@@ -14,6 +14,9 @@ import ArtworksScreen from "../screens/user/ArtworksScreen";
 import ArtworkDetailScreen from "../screens/user/ArtworkDetailScreen";
 import ArtmatDetailScreen from "../screens/user/ArtmatDetailScreen";
 import CartScreen from "../screens/user/CartScreen";
+import CheckoutScreen from "../screens/user/CheckoutScreen";
+import OrderScreen from "../screens/user/OrderScreen";
+import OrderDetailsScreen from "../screens/user/OrderDetailsScreen";
 // Import the getCartCount function from your cart.js utility
 import { getCartCount } from "../utils/cart";
 
@@ -88,6 +91,11 @@ const CartStackNavigator = () => {
         name="CartMain" 
         component={CartScreen} 
         options={{ title: "Shopping Cart" }}
+      />
+      <CartStack.Screen 
+        name="CheckoutScreen" 
+        component={CheckoutScreen} 
+        options={{ title: "Checkout" }}
       />
       <CartStack.Screen 
         name="ArtworkDetailScreen" 
@@ -216,6 +224,14 @@ const UserNavigator = () => {
           headerTitle: "Artopia"
         }}
       />
+      <Drawer.Screen 
+        name="OrderDetails" 
+        component={OrderDetailsScreen} 
+        options={{
+          drawerItemStyle: { display: 'none' }
+        }}
+      />
+      <Drawer.Screen name="Orders" component={OrderScreen} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
       <Drawer.Screen 
         name="Cart" 

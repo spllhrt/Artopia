@@ -9,6 +9,7 @@ import Dashboard from "../screens/admin/DashboardScreen";
 import Artworks from "../screens/admin/ArtworkScreen";
 import Materials from "../screens/admin/MaterialScreen";
 import Orders from "../screens/admin/OrderScreen";
+import Users from "../screens/admin/UsersScreen";
 import Profile from "../screens/ProfileScreen";
 import Settings from "../screens/SettingsScreen";
 
@@ -66,6 +67,7 @@ const AdminNavigator = () => (
         component={Profile} 
         options={{ drawerItemStyle: { display: "none" } }} 
     />
+    <Drawer.Screen name="Users" component={Users} />
     <Drawer.Screen name="Settings" component={Settings} />
   </Drawer.Navigator>
 );

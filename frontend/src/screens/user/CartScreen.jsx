@@ -117,7 +117,7 @@ const CartScreen = ({ navigation }) => {
       Alert.alert('Empty Cart', 'Your cart is empty');
       return;
     }
-    navigation.navigate('Checkout');
+    navigation.navigate('Cart', {screen: 'CheckoutScreen'});
   };
 
   const calculateTotal = () => {

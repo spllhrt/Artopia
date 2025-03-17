@@ -175,3 +175,54 @@ exports.updatePassword = async (req, res, next) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+exports.getUserDetails = async (req, res, next) => {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+        return res.status(400).json({ message: `User does not found with id: ${req.params.id}` })
+
+    }
+
+    return res.status(200).json({
+        success: true,
+        user
+    })
+}
+
+exports.allUsers = async (req, res, next) => {
+    const users = await User.find();
+    if (!users) {
+        return res.status(400).json({ error: 'no users found' })
+    }
+
+    return res.status(200).json({
+        success: true,
+        users
+    })
+}
+
+exports.updateUser = async (req, res, next) => {
+    try {
+        const newUserData = {
+            role: req.body.role
+        };
+
+        const user = await User.findByIdAndUpdate(req.params.id, newUserData, {
+            new: true,
+            runValidators: true,
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        return res.status(200).json({
+            success: true,
+            user
+        });
+    } catch (error) {
+        console.error("Error during user update:", error);
+        return res.status(500).json({ error: error.message });
+    }
+};

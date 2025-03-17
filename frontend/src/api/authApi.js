@@ -7,6 +7,7 @@ const apiClient = axios.create({
   baseURL: API_URL,
 });
 
+// In your apiClient interceptor
 apiClient.interceptors.request.use(async (config) => {
   const token = await getToken();
   if (token) {
@@ -82,6 +83,42 @@ export const logoutUser = async () => {
     return { message: "Logged out successfully" };
   } catch (error) {
     throw { message: "Logout failed" };
+  }
+};
+
+// Add these functions to your existing authApi.js file
+// Get all users (admin only)
+export const getAllUsers = async () => {
+  try {
+    const response = await apiClient.get("/admin/users");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Failed to fetch users" };
+  }
+};
+
+// Get specific user details (admin only)
+// In your authApi.js
+export const getUserDetails = async (userId) => {
+  try {
+    const response = await apiClient.get(`/admin/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    // Instead of throwing, you might want to return null or an empty object
+    // to prevent the UI from breaking
+    console.error(`Error fetching user ${userId}:`, error);
+    return { user: null };
+  }
+};
+
+// Update user role (admin only)
+export const updateUserRole = async (userId, role) => {
+  try {
+    // The apiClient should automatically include the Authorization header
+    const response = await apiClient.put(`/admin/user/${userId}`, { role });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Failed to update user role" };
   }
 };
 

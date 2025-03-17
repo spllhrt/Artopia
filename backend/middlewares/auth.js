@@ -19,15 +19,18 @@ exports.isAuthenticatedUser = async (req, res, next) => {
         return res.status(401).json({ message: 'Invalid or expired token' });
     }
 };
-
 exports.authorizeRoles = (...roles) => {
-
     return (req, res, next) => {
-        // console.log(roles, req.user, req.body);
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ message: `Role (${req.user.role}) is not allowed to acccess this resource` })
-
+        // Check if req.user exists first
+        if (!req.user) {
+            return res.status(401).json({ message: 'User not authenticated' });
         }
-        next()
+        
+        // Then check if the user's role is in the allowed roles
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ message: `Role (${req.user.role}) is not allowed to access this resource` });
+        }
+        
+        next();
     }
 }
