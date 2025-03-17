@@ -14,7 +14,7 @@ import {
   SafeAreaView
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux"; 
-import { setSelectedArtmat, setLoading, setError } from "../../redux/slices/matSlice";
+import { setSelectedArtmat, setLoading, setError } from "../../redux/matSlice";
 import { addArtmatToCart } from "../../utils/cart"; 
 import { getSingleArtmat } from "../../api/matApi";
 const { width, height } = Dimensions.get("window");
