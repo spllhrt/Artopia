@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json({limit:'50mb'}));
 app.use(express.urlencoded({limit: "50mb", extended: true }));
 const corsOptions = {
-    origin: `http://192.168.1.5:${PORT}`,  // eto babaguhin
+    origin: process.env.CORS_ORIGIN,  // eto babaguhin
     credentials: true, 
   };
   
@@ -42,5 +42,5 @@ app.use('/api/', artmat);
 app.use('/api/', order);
 
 app.listen(PORT, () => {
-    console.log(`✅ Server running on http://192.168.1.5:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

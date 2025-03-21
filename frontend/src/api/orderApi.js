@@ -18,9 +18,9 @@ import {
   deleteOrderFailure,
   clearErrors
 } from '../redux/orderSlice';
+import Constants from "expo-constants";
 
-const API_URL = "http://192.168.1.5:4000/api";
-
+const API_URL = Constants.expoConfig.extra.API_URL;
 const apiClient = axios.create({
   baseURL: API_URL,
 });
@@ -67,7 +67,6 @@ export const createOrderFromCart = (orderData) => async (dispatch) => {
   }
 };
 
-// Get currently logged in user orders
 export const getMyOrders = () => async (dispatch) => {
   try {
     dispatch(ordersRequest());
@@ -75,18 +74,25 @@ export const getMyOrders = () => async (dispatch) => {
     const { data } = await apiClient.get('/orders/me');
     
     dispatch(ordersSuccess({
-      orders: data.orders,
+      orders: data.orders || [],
       totalAmount: data.totalAmount || 0
     }));
-    return data.orders;
+    return data.orders || [];
   } catch (error) {
-    console.error("Get my orders error:", error.response || error);
-    const errorMessage = error.response?.data?.message || 'Failed to fetch your orders';
-    dispatch(ordersFailure(errorMessage));
-    throw error;
+    if (error.response?.status === 404 && error.response?.data?.message === 'No orders found') {
+      dispatch(ordersSuccess({
+        orders: [],
+        totalAmount: 0
+      }));
+      return [];
+    } else {
+      console.error("Get my orders error:", error.response || error);
+      const errorMessage = error.response?.data?.message || 'Failed to fetch your orders';
+      dispatch(ordersFailure(errorMessage));
+      throw error;
+    }
   }
 };
-
 // Get order details
 export const getOrderDetails = (id) => async (dispatch) => {
   try {
@@ -110,11 +116,19 @@ export const getAllOrders = () => async (dispatch) => {
     
     const { data } = await apiClient.get('/admin/orders');
     
+    // Dispatch success action with the data
     dispatch(ordersSuccess({
       orders: data.orders || [],
       totalAmount: data.totalAmount || 0
     }));
-    return data;
+    
+    // Return the data for component use
+    return {
+      payload: {
+        orders: data.orders || [],
+        totalAmount: data.totalAmount || 0
+      }
+    };
   } catch (error) {
     // Handle "No orders found" as a success case with empty array
     if (error.response?.status === 404 && error.response?.data?.message === "No orders found") {
@@ -122,7 +136,7 @@ export const getAllOrders = () => async (dispatch) => {
         orders: [],
         totalAmount: 0
       }));
-      return { orders: [], totalAmount: 0 };
+      return { payload: { orders: [], totalAmount: 0 } };
     }
     
     console.error("Get all orders error:", error.response || error);

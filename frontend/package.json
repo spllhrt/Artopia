@@ -21,7 +21,10 @@
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "expo": "~52.0.35",
+    "expo-constants": "~17.0.8",
     "expo-image-picker": "^16.0.6",
+    "expo-secure-store": "~14.0.1",
+    "expo-sqlite": "~15.1.2",
     "expo-status-bar": "~2.0.1",
     "expo-updates": "~0.27.1",
     "react": "18.3.1",
@@ -37,9 +40,7 @@
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.19.13",
     "react-navigation": "^5.0.0",
-    "react-redux": "^9.2.0",
-    "expo-sqlite": "~15.1.2",
-    "expo-secure-store": "~14.0.1"
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

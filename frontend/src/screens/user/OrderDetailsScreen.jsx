@@ -13,6 +13,7 @@ import {
 import { useDispatch } from 'react-redux';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { getOrderDetails, updateOrder } from '../../api/orderApi';
+import { getUserDetails } from '../../api/authApi';
 import { AntDesign, MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 const OrderDetailsScreen = () => {
@@ -20,10 +21,11 @@ const OrderDetailsScreen = () => {
   const dispatch = useDispatch();
   const route = useRoute();
   const { orderId } = route.params;
-
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
     fetchOrderDetails();
@@ -34,12 +36,35 @@ const OrderDetailsScreen = () => {
       if (orderId) {
         const orderData = await dispatch(getOrderDetails(orderId));
         setOrder(orderData);
+        
+        // If order contains user information, fetch user details
+        if (orderData && (orderData.user || orderData.user?._id)) {
+          fetchUserDetails(orderData.user?._id || orderData.user);
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to load order details');
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Function to fetch user details with error handling
+  const fetchUserDetails = async (userId) => {
+    if (!userId) return;
+    
+    setLoadingUser(true);
+    try {
+      const response = await getUserDetails(userId);
+      
+      if (response && response.user) {
+        setUserData(response.user);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user details:", error);
+    } finally {
+      setLoadingUser(false);
     }
   };
 
@@ -83,6 +108,20 @@ const OrderDetailsScreen = () => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric'
     });
+  };
+
+  // Helper function to get user name
+  const getUserName = () => {
+    if (userData && userData.name) {
+      return userData.name;
+    }
+    
+    // Fallback to order.user if available
+    if (order && order.user && order.user.name) {
+      return order.user.name;
+    }
+    
+    return 'Unknown';
   };
 
   if (loading) {
@@ -154,6 +193,45 @@ const OrderDetailsScreen = () => {
           <Text style={styles.orderDate}>Placed on {formatDate(createdAt)}</Text>
         </View>
 
+        {/* Customer Information */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="person" size={20} color="#0066cc" />
+            <Text style={styles.sectionTitle}>Customer Information</Text>
+          </View>
+          
+          {loadingUser ? (
+            <View style={styles.loadingUserContainer}>
+              <ActivityIndicator size="small" color="#0066cc" />
+              <Text style={styles.loadingText}>Loading customer details...</Text>
+            </View>
+          ) : (
+            <View style={styles.customerInfoContainer}>
+              <View style={styles.infoRow}>
+                <MaterialIcons name="person-outline" size={16} color="#666" />
+                <Text style={styles.infoLabel}>Name:</Text>
+                <Text style={styles.infoValue}>{getUserName()}</Text>
+              </View>
+              
+              {userData && userData.email && (
+                <View style={styles.infoRow}>
+                  <MaterialIcons name="email" size={16} color="#666" />
+                  <Text style={styles.infoLabel}>Email:</Text>
+                  <Text style={styles.infoValue}>{userData.email}</Text>
+                </View>
+              )}
+              
+              {userData && userData.phone && (
+                <View style={styles.infoRow}>
+                  <MaterialIcons name="phone" size={16} color="#666" />
+                  <Text style={styles.infoLabel}>Phone:</Text>
+                  <Text style={styles.infoValue}>{userData.phone}</Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+        
         {/* Order Items */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
@@ -205,22 +283,22 @@ const OrderDetailsScreen = () => {
           </View>
           
           <View style={styles.addressContainer}>
-            <Text style={styles.addressName}>
-              {shippingInfo.name || 'Recipient'}
+            <Text style={styles.addressName}>Recipient: 
+            {" " + getUserName()}
             </Text>
-            <Text style={styles.addressText}>
-              {shippingInfo.address || 'No address provided'}
+            <Text style={styles.addressText}>Street: 
+              {" " + shippingInfo.address || 'No address provided'}
             </Text>
-            <Text style={styles.addressText}>
-              {shippingInfo.city || ''}{shippingInfo.city && shippingInfo.postalCode ? ', ' : ''}{shippingInfo.postalCode || ''}
+            <Text style={styles.addressText}>City: 
+              {" " + shippingInfo.city || ''}{shippingInfo.city && shippingInfo.postalCode ? ', ' : ''}{shippingInfo.postalCode || ''}
             </Text>
-            <Text style={styles.addressText}>
-              {shippingInfo.country || ''}
+            <Text style={styles.addressText}>Country: 
+              {" " + shippingInfo.country || ''}
             </Text>
             <View style={styles.phoneRow}>
               <MaterialIcons name="phone" size={16} color="#666" />
-              <Text style={styles.phoneText}>
-                {shippingInfo.phoneNo || 'Not provided'}
+              <Text style={styles.phoneText}>Phone: 
+                {" " + shippingInfo.phoneNo || 'Not provided'}
               </Text>
             </View>
           </View>
@@ -340,290 +418,324 @@ const OrderDetailsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#f5f5f7'
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F7FA',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-    backgroundColor: '#fff',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3
+    padding: 15,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   backButton: {
-    padding: 5
+    padding: 5,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
   },
   placeholder: {
-    width: 24
+    width: 24,
   },
-  title: { 
-    fontSize: 18, 
-    fontWeight: 'bold',
-    textAlign: 'center'
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
   },
-  loadingContainer: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#6B7280',
   },
-  loadingText: { 
-    marginTop: 10, 
-    fontSize: 16 
+  loadingUserContainer: {
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
   },
-  emptyContainer: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    padding: 20 
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  errorText: { 
-    fontSize: 18, 
-    color: '#666', 
-    marginTop: 20, 
-    marginBottom: 30, 
-    textAlign: 'center' 
-  },
-  emptyText: { 
-    textAlign: 'center', 
-    fontSize: 16, 
-    color: '#757575', 
-    marginVertical: 15 
+  errorText: {
+    fontSize: 16,
+    color: '#4B5563',
+    marginVertical: 15,
   },
   statusContainer: {
-    backgroundColor: '#fff',
-    padding: 20,
+    padding: 15,
+    backgroundColor: '#FFFFFF',
+    marginVertical: 10,
+    marginHorizontal: 15,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
     alignItems: 'center',
-    marginBottom: 10
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 10
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    marginBottom: 10,
   },
   statusText: {
-    color: 'white',
+    color: '#FFFFFF',
+    fontWeight: '600',
     fontSize: 14,
-    fontWeight: 'bold',
-    marginLeft: 5
+    marginLeft: 5,
   },
   orderId: {
     fontSize: 16,
-    fontWeight: '600',
-    marginTop: 10
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 5,
   },
   orderDate: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 5
+    color: '#6B7280',
   },
   sectionCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 15,
+    marginVertical: 8,
     borderRadius: 10,
-    marginHorizontal: 12,
-    marginBottom: 10,
-    padding: 15,
-    elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    overflow: 'hidden',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginLeft: 10
+    fontWeight: '600',
+    color: '#111827',
+    marginLeft: 8,
   },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    marginVertical: 10
+  customerInfoContainer: {
+    padding: 15,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginLeft: 8,
+    marginRight: 5,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '500',
+    flex: 1,
   },
   itemRow: {
     flexDirection: 'row',
-    paddingVertical: 10,
+    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#E5E7EB',
   },
   itemImageContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
+    width: 60,
+    height: 60,
+    borderRadius: 6,
     overflow: 'hidden',
-    marginRight: 15
+    backgroundColor: '#F3F4F6',
   },
   itemImage: {
     width: '100%',
-    height: '100%'
+    height: '100%',
   },
   placeholderImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   itemDetails: {
     flex: 1,
-    justifyContent: 'space-between'
+    marginLeft: 12,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
   },
   itemType: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 6,
   },
   itemPriceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   itemPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333'
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
   },
   itemQuantity: {
-    fontSize: 14,
-    color: '#666'
+    fontSize: 13,
+    color: '#6B7280',
   },
   addressContainer: {
-    paddingVertical: 5
+    padding: 15,
   },
   addressName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 8
+    color: '#111827',
+    marginBottom: 8,
   },
   addressText: {
-    fontSize: 15,
-    color: '#333',
-    lineHeight: 22
+    fontSize: 14,
+    color: '#4B5563',
+    marginBottom: 4,
   },
   phoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10
+    marginTop: 8,
   },
   phoneText: {
-    fontSize: 15,
-    color: '#666',
-    marginLeft: 8
+    fontSize: 14,
+    color: '#4B5563',
+    marginLeft: 8,
   },
   paymentStatusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   paymentLabel: {
-    fontSize: 15,
-    color: '#666'
+    fontSize: 14,
+    color: '#6B7280',
+    marginRight: 10,
+  },
+  paymentValue: {
+    fontSize: 14,
+    color: '#111827',
+    flex: 1,
   },
   paymentStatusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
   },
   paymentStatusText: {
-    fontSize: 14,
-    fontWeight: '600'
+    fontSize: 12,
+    fontWeight: '600',
   },
   paymentInfoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8
-  },
-  paymentValue: {
-    fontSize: 15,
-    fontWeight: '500'
+    alignItems: 'center',
+    padding: 15,
   },
   summaryContainer: {
-    paddingVertical: 5
+    padding: 15,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: 6
+    marginBottom: 12,
   },
   summaryLabel: {
-    fontSize: 15,
-    color: '#666'
+    fontSize: 14,
+    color: '#6B7280',
   },
   summaryValue: {
-    fontSize: 15,
-    fontWeight: '500'
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 12,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 5
+    alignItems: 'center',
   },
   totalLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#111827',
   },
   totalAmount: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#0066cc',
   },
   buttonContainer: {
-    marginHorizontal: 12,
-    marginVertical: 20,
+    padding: 15,
+    marginBottom: 20,
   },
   shopButton: {
     backgroundColor: '#0066cc',
-    paddingVertical: 15,
     borderRadius: 8,
+    padding: 14,
     alignItems: 'center',
-    marginBottom: 10,
-    elevation: 1
+    marginBottom: 12,
   },
   shopButtonText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   actionButton: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 15,
     borderRadius: 8,
-    marginTop: 5,
-    elevation: 1
-  },
-  buttonIcon: {
-    marginRight: 8
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: '#F44336'
+    backgroundColor: '#DC2626',
   },
   actionButtonText: {
-    color: 'white',
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
-    fontSize: 16
-  }
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  emptyText: {
+    textAlign: 'center',
+    padding: 15,
+    color: '#6B7280',
+    fontStyle: 'italic',
+  },
 });
 
 export default OrderDetailsScreen;

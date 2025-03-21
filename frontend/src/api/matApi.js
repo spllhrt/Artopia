@@ -1,8 +1,8 @@
 import axios from "axios";
 import { getToken } from "../utils/secureStorage";
+import Constants from "expo-constants";
 
-const API_URL = "http://192.168.1.5:4000/api";
-
+const API_URL = Constants.expoConfig.extra.API_URL;
 const apiClient = axios.create({
   baseURL: API_URL,
 });

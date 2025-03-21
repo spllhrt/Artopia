@@ -1,13 +1,14 @@
 import axios from "axios";
 import { storeToken, getToken, removeToken } from "../utils/secureStorage";
+import { CommonActions } from "@react-navigation/native";
+import { logout } from '../redux/authSlice'; 
+import Constants from "expo-constants";
 
-const API_URL = "http://192.168.1.5:4000/api"; 
-
+const API_URL = Constants.expoConfig.extra.API_URL;
 const apiClient = axios.create({
   baseURL: API_URL,
 });
 
-// In your apiClient interceptor
 apiClient.interceptors.request.use(async (config) => {
   const token = await getToken();
   if (token) {
@@ -52,7 +53,6 @@ export const getUserProfile = async () => {
 
 export const updateUserProfile = async (data) => {
   try {
-    // Check if data is FormData or regular object
     const isFormData = data instanceof FormData;
     
     const headers = isFormData 
@@ -77,17 +77,30 @@ export const updatePassword = async (oldPassword, newPassword) => {
   }
 };
 
-export const logoutUser = async () => {
+export const logoutUser = async (navigation, dispatch) => {
   try {
-    await removeToken(); 
+    dispatch(logout());
+
+    setTimeout(() => {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            { 
+              name: "Shop",
+              params: { refresh: Date.now() } 
+            }
+          ],
+        })
+      );
+    }, 100);
+    
     return { message: "Logged out successfully" };
   } catch (error) {
     throw { message: "Logout failed" };
   }
 };
 
-// Add these functions to your existing authApi.js file
-// Get all users (admin only)
 export const getAllUsers = async () => {
   try {
     const response = await apiClient.get("/admin/users");
@@ -97,24 +110,18 @@ export const getAllUsers = async () => {
   }
 };
 
-// Get specific user details (admin only)
-// In your authApi.js
 export const getUserDetails = async (userId) => {
   try {
     const response = await apiClient.get(`/admin/user/${userId}`);
     return response.data;
   } catch (error) {
-    // Instead of throwing, you might want to return null or an empty object
-    // to prevent the UI from breaking
     console.error(`Error fetching user ${userId}:`, error);
     return { user: null };
   }
 };
 
-// Update user role (admin only)
 export const updateUserRole = async (userId, role) => {
   try {
-    // The apiClient should automatically include the Authorization header
     const response = await apiClient.put(`/admin/user/${userId}`, { role });
     return response.data;
   } catch (error) {

@@ -56,6 +56,7 @@ const AdminOrderScreen = () => {
 
 // Updated loadOrders function inside useEffect
 useEffect(() => {
+  // Set loading state while fetching orders
   const loadOrders = async () => {
     try {
       const response = await dispatch(getAllOrders());
@@ -64,38 +65,27 @@ useEffect(() => {
       if (response && response.payload && response.payload.orders && response.payload.orders.length > 0) {
         const orderData = response.payload.orders;
         
-        // Extract all unique user IDs from orders
-        const userIds = new Set();
-        orderData.forEach(order => {
-          // Handle different possible user reference structures
-          const userId = order.user?._id || order.user;
-          if (userId && typeof userId === 'string') {
-            userIds.add(userId);
-          }
-        });
+        // Batch fetch user details
+        const userIds = [...new Set(
+          orderData.map(order => order.user?._id || order.user)
+          .filter(id => id && typeof id === 'string')
+        )];
         
-        // Fetch user details for each unique user ID
-        Array.from(userIds).forEach(userId => {
-          fetchUserDetails(userId);
-        });
-      } else {
-        // Handle the case when no orders are found
-        console.log("No orders found or empty orders array");
-        // You might want to set some state here to show a friendly message to the user
+        // Fetch all user data at once in a batch if possible
+        // Or use Promise.all to fetch multiple users in parallel
+        Promise.all(userIds.map(userId => fetchUserDetails(userId)))
+          .catch(err => console.error("Error fetching user details:", err));
       }
     } catch (err) {
       console.error("Error loading orders:", err);
-      // Ensure the error is properly handled and displayed to the user
-      if (err.response && err.response.data && err.response.data.message) {
-        Alert.alert('Error', err.response.data.message);
-      } else {
-        Alert.alert('Error', 'Failed to load orders. Please try again later.');
-      }
+      Alert.alert('Error', 'Failed to load orders. Please try again later.');
     }
   };
   
+  // Load orders when component mounts
   loadOrders();
   
+  // Handle order status changes
   if (error) {
     Alert.alert('Error', error);
     dispatch(clearOrderErrors());
@@ -103,10 +93,14 @@ useEffect(() => {
   if (isUpdated) {
     Alert.alert('Success', 'Order updated successfully');
     dispatch(updateOrderReset());
+    // Reload orders after update
+    loadOrders();
   }
   if (isDeleted) {
     Alert.alert('Success', 'Order deleted successfully');
     dispatch(deleteOrderReset());
+    // Reload orders after deletion
+    loadOrders();
   }
 }, [dispatch, error, isUpdated, isDeleted]);
 

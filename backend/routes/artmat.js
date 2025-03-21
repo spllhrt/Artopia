@@ -22,8 +22,8 @@ router.delete('/admin/artmat/:id', isAuthenticatedUser, authorizeRoles('admin'),
 router.post('/admin/artmat/new', isAuthenticatedUser, authorizeRoles('admin'), upload.array('images', 10), newArtmat);
 
 
-router.put('/review/:artmatId', isAuthenticatedUser, createArtmatReview);
-router.get('/reviews/:artmatId', getArtmatReviews);
+router.put('/artmat/review/:artmatId', isAuthenticatedUser, createArtmatReview);
+router.get('/artmat/reviews/:artmatId', getArtmatReviews);
 router.delete('/review/:reviewId', isAuthenticatedUser, authorizeRoles('admin'), deleteReview);
 
 module.exports = router

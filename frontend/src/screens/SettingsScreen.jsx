@@ -1,20 +1,43 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useDispatch } from "react-redux";
-import { logout } from "../redux/authSlice";
+import { logoutUser } from "../api/authApi";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 const SettingsScreen = () => {
-  const dispatch = useDispatch();
-  const navigation = useNavigation();
-
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Logout", onPress: () => dispatch(logout()), style: "destructive" },
-    ]);
-  };
+  
+const navigation = useNavigation(); // Initialize navigation
+const dispatch = useDispatch();
+  
+const handleLogout = async () => {
+  // Show confirmation dialog
+  Alert.alert(
+    "Confirm Logout",
+    "Are you sure you want to logout?",
+    [
+      {
+        text: "Cancel",
+        style: "cancel"
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await logoutUser(navigation, dispatch);
+            // Success handling is not needed here since navigation will happen in logoutUser
+          } catch (error) {
+            // Error handling
+            Alert.alert("Logout Failed", error.message || "Failed to log out. Please try again.");
+            console.error(error.message);
+          }
+        }
+      }
+    ],
+    { cancelable: true }
+  );
+};
 
   return (
     <View style={styles.container}>
@@ -23,7 +46,7 @@ const SettingsScreen = () => {
       </View>
       
       <TouchableOpacity style={styles.item} onPress={() => navigation.navigate("Profile")}>
-      <Ionicons name="person-outline" size={20} color="#2C3E50" style={styles.icon} />
+        <Ionicons name="person-outline" size={20} color="#2C3E50" style={styles.icon} />
         <Text style={styles.itemText}>Go to Profile</Text>
       </TouchableOpacity>
 

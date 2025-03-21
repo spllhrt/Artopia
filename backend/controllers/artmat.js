@@ -239,7 +239,7 @@ exports.getArtmatReviews = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "Artmat ID is required." });
         }
 
-        const artmat = await Artmat.findById(aartmatId);
+        const artmat = await Artmat.findById(artmatId);
 
         if (!artmat) {
             return res.status(404).json({ success: false, message: "Artmat not found." });
@@ -271,7 +271,7 @@ exports.deleteReview = async (req, res, next) => {
 
         artmat.reviews = artmat.reviews.filter(review => review._id.toString() !== reviewId);
         artmat.numOfReviews = artmat.reviews.length;
-        artartmatwork.ratings = artmat.reviews.length > 0 
+        artmat.ratings = artmat.reviews.length > 0 
             ? artmat.reviews.reduce((acc, item) => item.rating + acc, 0) / artmat.reviews.length 
             : 0;
 

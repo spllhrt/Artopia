@@ -11,13 +11,16 @@ import {
   Image,
   Modal,
   ScrollView,
-  SafeAreaView
+  SafeAreaView,
+  TextInput
 } from 'react-native';
 import { getAllUsers, updateUserRole, getUserDetails } from '../../api/authApi';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const UsersScreen = ({ navigation }) => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -31,6 +34,7 @@ const UsersScreen = ({ navigation }) => {
       setError(null);
       const response = await getAllUsers();
       setUsers(response.users);
+      setFilteredUsers(response.users);
     } catch (error) {
       setError(error.message || 'Failed to load users');
       Alert.alert('Error', error.message || 'Failed to load users');
@@ -48,6 +52,30 @@ const UsersScreen = ({ navigation }) => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // Filter users based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredUsers(users);
+    } else {
+      const lowercaseQuery = searchQuery.toLowerCase();
+      const filtered = users.filter(
+        user => 
+          user.name.toLowerCase().includes(lowercaseQuery) || 
+          user.email.toLowerCase().includes(lowercaseQuery)
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchQuery, users]);
+
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
+
   const handleRoleUpdate = async (userId, currentRole) => {
     // Toggle between 'user' and 'admin' roles
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
@@ -255,8 +283,27 @@ const UsersScreen = ({ navigation }) => {
         <Text style={styles.subtitle}>Total users: {users.length}</Text>
       </View>
       
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <Icon name="search" size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name or email"
+            value={searchQuery}
+            onChangeText={handleSearch}
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+              <Icon name="cancel" size={20} color="#666" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+      
       <FlatList
-        data={users}
+        data={filteredUsers}
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContainer}
@@ -265,7 +312,11 @@ const UsersScreen = ({ navigation }) => {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No users found</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery.length > 0 
+                ? 'No matching users found' 
+                : 'No users found'}
+            </Text>
           </View>
         }
       />
@@ -274,6 +325,7 @@ const UsersScreen = ({ navigation }) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -294,6 +346,33 @@ const styles = StyleSheet.create({
       fontSize: 14,
       color: '#666',
       marginTop: 4,
+    },
+    // Search Bar Styles
+    searchContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: '#ffffff',
+      borderBottomWidth: 1,
+      borderBottomColor: '#e1e4e8',
+    },
+    searchInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#f1f3f5',
+      borderRadius: 8,
+      paddingHorizontal: 12,
+    },
+    searchIcon: {
+      marginRight: 8,
+    },
+    searchInput: {
+      flex: 1,
+      paddingVertical: 10,
+      fontSize: 16,
+      color: '#333',
+    },
+    clearButton: {
+      padding: 6,
     },
     listContainer: {
       padding: 12,
@@ -533,4 +612,5 @@ const styles = StyleSheet.create({
       fontWeight: '500',
     },
   });
+  
   export default UsersScreen;

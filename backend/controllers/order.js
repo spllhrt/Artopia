@@ -44,16 +44,11 @@ exports.myOrders = async (req, res) => {
     try {
         const orders = await Order.find({ user: req.user.id });
         
-        if (!orders || orders.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'No orders found'
-            });
-        }
-
+        // Always return 200, with empty array if no orders found
         return res.status(200).json({
             success: true,
-            orders
+            orders: orders || [],
+            totalAmount: orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
         });
     } catch (error) {
         return res.status(400).json({
@@ -62,7 +57,6 @@ exports.myOrders = async (req, res) => {
         });
     }
 };
-
 // Get single order
 exports.getSingleOrder = async (req, res) => {
     try {
@@ -90,24 +84,30 @@ exports.getSingleOrder = async (req, res) => {
 // Get all orders - ADMIN
 exports.allOrders = async (req, res) => {
     try {
-        const orders = await Order.find();
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
         
-        if (!orders || orders.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'No orders found'
-            });
-        }
-
-        let totalAmount = 0;
-        orders.forEach(order => {
-            totalAmount += order.totalPrice;
-        });
-
+        const orders = await Order.find()
+            .limit(limit)
+            .skip(skip)
+            .sort({ createdAt: -1 });
+        
+        const totalCount = await Order.countDocuments();
+        const totalAmount = await Order.aggregate([
+            { $group: { _id: null, total: { $sum: "$totalPrice" } } }
+        ]);
+        
         return res.status(200).json({
             success: true,
-            totalAmount,
-            orders
+            totalAmount: totalAmount.length > 0 ? totalAmount[0].total : 0,
+            orders,
+            pagination: {
+                total: totalCount,
+                pages: Math.ceil(totalCount / limit),
+                page,
+                limit
+            }
         });
     } catch (error) {
         return res.status(400).json({

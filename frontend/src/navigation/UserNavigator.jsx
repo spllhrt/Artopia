@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Image, View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import ProfileScreen from "../screens/ProfileScreen";
 import HomeScreen from "../screens/user/HomeScreen";
 import SettingsScreen from "../screens/SettingsScreen";
@@ -19,7 +19,13 @@ import OrderScreen from "../screens/user/OrderScreen";
 import OrderDetailsScreen from "../screens/user/OrderDetailsScreen";
 // Import the getCartCount function from your cart.js utility
 import { getCartCount } from "../utils/cart";
+import withAuthCheck from "./withAuthCheck";
 
+
+const ProtectedOrderScreen = withAuthCheck(OrderScreen);
+const ProtectedSettingsScreen = withAuthCheck(SettingsScreen);
+const ProtectedProfileScreen = withAuthCheck(ProfileScreen);
+const ProtectedCartScreen = withAuthCheck(CartScreen);
 // Create Stack Navigator for Shop section
 const ShopStack = createStackNavigator();
 const ShopStackNavigator = () => {
@@ -89,7 +95,7 @@ const CartStackNavigator = () => {
     >
       <CartStack.Screen 
         name="CartMain" 
-        component={CartScreen} 
+        component={ProtectedCartScreen} // Use the protected CartScreen here
         options={{ title: "Shopping Cart" }}
       />
       <CartStack.Screen 
@@ -141,7 +147,7 @@ const BottomTabNavigator = () => {
     >
       <BottomTabs.Screen name="Home" component={HomeScreen} />
       <BottomTabs.Screen name="Shop" component={ShopStackNavigator} />
-      <BottomTabs.Screen name="Profile" component={ProfileScreen} />
+      <BottomTabs.Screen name="Profile" component={ProtectedProfileScreen} />
     </BottomTabs.Navigator>
   );
 };
@@ -169,25 +175,29 @@ const UserNavigator = () => {
   const user = useSelector((state) => state.auth.user);
   
   useEffect(() => {
+    let isMounted = true; // Track if the component is mounted
+  
     const fetchCartCount = async () => {
       try {
-        // Use the user ID from Redux state to fetch cart count
-        if (user?._id) {
+        if (user?._id && isMounted) {
           const count = await getCartCount(user._id);
-          setCartItemCount(count);
+          if (isMounted) {
+            setCartItemCount(count);
+          }
         }
       } catch (error) {
         console.error("Error fetching cart count:", error);
       }
     };
-    
+  
     fetchCartCount();
-    
-    // Set up an interval to periodically refresh the cart count
+  
     const intervalId = setInterval(fetchCartCount, 5000);
-    
-    // Clean up interval on component unmount
-    return () => clearInterval(intervalId);
+  
+    return () => {
+      isMounted = false; // Mark the component as unmounted
+      clearInterval(intervalId); // Clear the interval
+    };
   }, [user?._id]);
   
   console.log("Cart Count from SQLite:", cartItemCount);
@@ -231,8 +241,8 @@ const UserNavigator = () => {
           drawerItemStyle: { display: 'none' }
         }}
       />
-      <Drawer.Screen name="Orders" component={OrderScreen} />
-      <Drawer.Screen name="Settings" component={SettingsScreen} />
+      <Drawer.Screen name="Orders" component={ProtectedOrderScreen} />
+      <Drawer.Screen name="Settings" component={ProtectedSettingsScreen} />
       <Drawer.Screen 
         name="Cart" 
         component={CartStackNavigator} 

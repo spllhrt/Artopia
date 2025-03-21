@@ -7,9 +7,11 @@ import {
   TouchableOpacity, 
   Image, 
   ActivityIndicator,
-  RefreshControl 
+  RefreshControl,
+  Alert
 } from "react-native";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { getAllOrders, clearOrderErrors } from "../../api/orderApi";
 import { getAdminArtworks } from "../../api/artApi";
 import { getAdminArtmats } from "../../api/matApi";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,13 +26,53 @@ const DashboardScreen = ({ navigation }) => {
     materialsCount: 0
   });
   
-  const { orders = [] } = useSelector(state => state.orders) || {};
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [orderError, setOrderError] = useState(null);
   const user = useSelector(state => state.auth.user);
+  const dispatch = useDispatch();
   
-  // Calculate stats
-  const totalSales = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-  const processingOrders = orders.filter(order => order.orderStatus === 'Processing').length;
-  const shippedOrders = orders.filter(order => order.orderStatus === 'Shipped').length;
+  const [orderStats, setOrderStats] = useState({
+    totalOrders: 0,
+    totalSales: 0,
+    processingOrders: 0,
+    shippedOrders: 0
+  });
+  
+  const loadOrders = async () => {
+    try {
+      setOrdersLoading(true);
+      const response = await dispatch(getAllOrders());
+      
+      if (response && response.payload && response.payload.orders) {
+        setOrders(response.payload.orders);
+        
+        // Calculate stats from orders
+        const totalSales = response.payload.orders.reduce(
+          (sum, order) => sum + (order.totalPrice || 0), 0
+        );
+        const processingOrders = response.payload.orders.filter(
+          order => order.orderStatus === 'Processing'
+        ).length;
+        const shippedOrders = response.payload.orders.filter(
+          order => order.orderStatus === 'Shipped'
+        ).length;
+        
+        // Update state with calculated stats
+        setOrderStats({
+          totalSales,
+          processingOrders,
+          shippedOrders,
+          totalOrders: response.payload.orders.length || 0
+        });
+      }
+    } catch (error) {
+      console.error("Dashboard orders fetch error:", error);
+      setOrderError(error.message || "Failed to load orders");
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
   
   const fetchData = async () => {
     try {
@@ -56,12 +98,68 @@ const DashboardScreen = ({ navigation }) => {
   };
   
   useEffect(() => {
-    fetchData();
-  }, []);
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all data in parallel
+        const [artworksData, materialsData] = await Promise.all([
+          getAdminArtworks(),
+          getAdminArtmats()
+        ]);
+        
+        setArtworks(artworksData.artworks || []);
+        setMaterials(materialsData.artmats || []);
+        
+        setCounts({
+          artworksCount: artworksData.artworks?.length || 0,
+          materialsCount: materialsData.artmats?.length || 0
+        });
+        
+        // Load orders separately (since it uses dispatch)
+        await loadOrders();
+        
+      } catch (error) {
+        console.error("Dashboard data fetch error:", error);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    };
+    
+    fetchAllData();
+    
+    // Handle order errors
+    if (orderError) {
+      Alert.alert('Error', orderError);
+      setOrderError(null);
+      dispatch(clearOrderErrors());
+    }
+  }, [orderError]);
   
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    fetchData();
+    try {
+      const [artworksData, materialsData] = await Promise.all([
+        getAdminArtworks(),
+        getAdminArtmats()
+      ]);
+      
+      setArtworks(artworksData.artworks || []);
+      setMaterials(materialsData.artmats || []);
+      
+      setCounts({
+        artworksCount: artworksData.artworks?.length || 0,
+        materialsCount: materialsData.artmats?.length || 0
+      });
+      
+      // Refresh orders
+      await loadOrders();
+    } catch (error) {
+      console.error("Dashboard refresh error:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
   
   const StatCard = ({ title, value, icon, color }) => (
@@ -100,6 +198,20 @@ const DashboardScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
   
+  const OrderCard = ({ order, onPress }) => (
+    <TouchableOpacity style={styles.itemCard} onPress={onPress}>
+      <View style={styles.orderCardContent}>
+        <Text style={styles.itemTitle} numberOfLines={1}>Order #{order._id?.substring(0, 8)}</Text>
+        <Text style={styles.itemSubtitle} numberOfLines={1}>
+          {order.orderStatus || "Processing"}
+        </Text>
+        <Text style={styles.materialPrice}>
+          ₱{order.totalPrice?.toFixed(2) || "0.00"}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+  
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
@@ -126,10 +238,30 @@ const DashboardScreen = ({ navigation }) => {
       {/* Stats Summary */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll}>
         <View style={styles.statsContainer}>
-          <StatCard title="Total Orders" value={orders.length || 0} icon="document-text" color="#4F46E5" />
-          <StatCard title="Total Sales" value={`$${totalSales.toFixed(2)}`} icon="cash" color="#10B981" />
-          <StatCard title="Processing" value={processingOrders} icon="time" color="#F59E0B" />
-          <StatCard title="Shipped" value={shippedOrders} icon="bicycle" color="#3B82F6" />
+          <StatCard 
+            title="Total Orders" 
+            value={orderStats.totalOrders} 
+            icon="document-text" 
+            color="#4F46E5" 
+          />
+          <StatCard 
+            title="Total Sales" 
+            value={`₱${orderStats.totalSales.toFixed(2)}`} 
+            icon="cash" 
+            color="#10B981" 
+          />
+          <StatCard 
+            title="Processing" 
+            value={orderStats.processingOrders} 
+            icon="time" 
+            color="#F59E0B" 
+          />
+          <StatCard 
+            title="Shipped" 
+            value={orderStats.shippedOrders} 
+            icon="bicycle" 
+            color="#3B82F6" 
+          />
         </View>
       </ScrollView>
       
@@ -145,7 +277,23 @@ const DashboardScreen = ({ navigation }) => {
           <Text style={styles.statLabel}>Materials</Text>
         </TouchableOpacity>
       </View>
-      
+      {/* Recent Orders */}
+      <SectionHeader 
+        title="Recent Orders" 
+        onViewAll={() => navigation.navigate("Orders")} 
+      />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {orders.length > 0 ? (
+          orders.slice(0, 5).map((order, index) => (
+            <OrderCard 
+              key={order._id || index}
+              order={order}
+            />
+          ))
+        ) : (
+          <EmptyState message="No orders found" />
+        )}
+      </ScrollView>
       {/* Recent Artworks */}
       <SectionHeader 
         title="Recent Artworks" 
@@ -159,7 +307,6 @@ const DashboardScreen = ({ navigation }) => {
               key={artwork._id || index}
               item={artwork}
               type="artwork"
-              onPress={() => navigation.navigate("ArtworkDetail", { id: artwork._id })}
             />
           ))
         ) : (
@@ -180,7 +327,6 @@ const DashboardScreen = ({ navigation }) => {
               key={material._id || index}
               item={material}
               type="material"
-              onPress={() => navigation.navigate("MaterialDetail", { id: material._id })}
             />
           ))
         ) : (
@@ -356,6 +502,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: 200,
+  },
+  orderCardContent: {
+    padding: 15,
   }
 });
 
