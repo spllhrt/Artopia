@@ -3,6 +3,7 @@ import authReducer from "./authSlice";
 import artReducer from './artSlice';
 import matReducer from './matSlice';
 import orderReducer from './orderSlice';
+import notificationsReducer from './notificationSlice';
 
 const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
     artworks: artReducer,
     artmats: matReducer,
     orders: orderReducer,
+    notifications: notificationsReducer,
   },
 });
 

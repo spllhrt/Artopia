@@ -17,6 +17,8 @@ import CartScreen from "../screens/user/CartScreen";
 import CheckoutScreen from "../screens/user/CheckoutScreen";
 import OrderScreen from "../screens/user/OrderScreen";
 import OrderDetailsScreen from "../screens/user/OrderDetailsScreen";
+import Notif from "../screens/user/NotificationScreen";
+import NotifView from "../screens/user/NotificationViewScreen";
 // Import the getCartCount function from your cart.js utility
 import { getCartCount } from "../utils/cart";
 import withAuthCheck from "./withAuthCheck";
@@ -26,6 +28,7 @@ const ProtectedOrderScreen = withAuthCheck(OrderScreen);
 const ProtectedSettingsScreen = withAuthCheck(SettingsScreen);
 const ProtectedProfileScreen = withAuthCheck(ProfileScreen);
 const ProtectedCartScreen = withAuthCheck(CartScreen);
+const ProtectedNotifScreen = withAuthCheck(Notif);
 // Create Stack Navigator for Shop section
 const ShopStack = createStackNavigator();
 const ShopStackNavigator = () => {
@@ -124,6 +127,7 @@ const BottomTabNavigator = () => {
   const avatar = user?.avatar?.url;
   return (
     <BottomTabs.Navigator
+      initialRouteName="Shop"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
@@ -241,6 +245,13 @@ const UserNavigator = () => {
           drawerItemStyle: { display: 'none' }
         }}
       />
+      <Drawer.Screen 
+        name="NotificationView" 
+        component={NotifView} 
+        options={{
+            drawerItemStyle: { display: 'none' }
+          }}/>
+      <Drawer.Screen name="Promotions" component={ProtectedNotifScreen} />
       <Drawer.Screen name="Orders" component={ProtectedOrderScreen} />
       <Drawer.Screen name="Settings" component={ProtectedSettingsScreen} />
       <Drawer.Screen 

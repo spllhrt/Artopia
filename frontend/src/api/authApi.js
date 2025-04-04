@@ -76,23 +76,16 @@ export const updatePassword = async (oldPassword, newPassword) => {
     throw error.response?.data || { message: "Password update failed" };
   }
 };
-
 export const logoutUser = async (navigation, dispatch) => {
   try {
+    await removeToken(); 
     dispatch(logout());
-
+    
     setTimeout(() => {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [
-            { 
-              name: "Shop",
-              params: { refresh: Date.now() } 
-            }
-          ],
-        })
-      );
+      navigation.navigate("User", { 
+        screen: "Shop", 
+        params: { refresh: Date.now() } 
+      });
     }, 100);
     
     return { message: "Logged out successfully" };
@@ -100,7 +93,6 @@ export const logoutUser = async (navigation, dispatch) => {
     throw { message: "Logout failed" };
   }
 };
-
 export const getAllUsers = async () => {
   try {
     const response = await apiClient.get("/admin/users");

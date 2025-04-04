@@ -16,6 +16,7 @@ import { updateOrderReset, deleteOrderReset } from '../../redux/orderSlice';
 import { getUserDetails } from '../../api/authApi';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
+import { sendOrderUpdateNotification } from '../../api/notificationApi'; 
 
 const AdminOrderScreen = () => {
   const dispatch = useDispatch();
@@ -117,6 +118,15 @@ useEffect(() => {
 
   const handleStatusChange = (orderId, newStatus) => {
     dispatch(updateOrder(orderId, { status: newStatus, isAdmin: true }));
+    
+    // Send notification about order status change
+    sendOrderUpdateNotification(
+      orderId,
+      newStatus,
+      `Your order #${orderId.substring(0, 8)} has been updated to ${newStatus}`
+    ).catch(error => {
+      console.error('❌ Failed to send order notification:', error);
+    });
   };
 
   const handleDeleteOrder = () => {

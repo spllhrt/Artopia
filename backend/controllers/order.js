@@ -159,6 +159,9 @@ exports.updateOrder = async (req, res) => {
             });
         }
 
+        let statusChanged = false;
+        let newStatus = '';
+
         // Update payment status if included in request
         if (req.body.paymentStatus) {
             // Update payment info
@@ -174,9 +177,12 @@ exports.updateOrder = async (req, res) => {
         }
 
         // Update order status if included in request
-        if (req.body.status) {
+        if (req.body.status && order.orderStatus !== req.body.status) {
+            statusChanged = true;
+            newStatus = req.body.status;
+            
             // Only proceed with stock updates if order is being confirmed/processed
-            if (req.body.status !== 'Cancelled' && order.orderStatus !== req.body.status) {
+            if (req.body.status !== 'Cancelled') {
                 // Update stock for each item
                 for (const item of order.orderItems) {
                     await updateStock(item.product, item.quantity, item.productType);
@@ -196,6 +202,42 @@ exports.updateOrder = async (req, res) => {
 
         await order.save();
 
+        // Send notification if status changed
+        if (statusChanged) {
+            try {
+                // Generate appropriate message based on status
+                let message = '';
+                switch (newStatus) {
+                    case 'Processing':
+                        message = `Your order #${order._id.toString().slice(-6)} is now being processed. We'll update you when it ships!`;
+                        break;
+                    case 'Shipped':
+                        message = `Great news! Your order #${order._id.toString().slice(-6)} has shipped and is on its way to you.`;
+                        break;
+                    case 'Delivered':
+                        message = `Your order #${order._id.toString().slice(-6)} has been delivered. Enjoy your art supplies!`;
+                        break;
+                    case 'Cancelled':
+                        message = `Your order #${order._id.toString().slice(-6)} has been cancelled. Please contact support for more information.`;
+                        break;
+                    default:
+                        message = `Your order #${order._id.toString().slice(-6)} status has been updated to: ${newStatus}`;
+                }
+                
+                // Send notification using the endpoint we created
+                await axios.post(`${req.protocol}://${req.get('host')}/api/notify-order-update`, {
+                    orderId: order._id,
+                    status: newStatus,
+                    message: message
+                });
+                
+                console.log('✅ Order update notification sent');
+            } catch (notifyError) {
+                console.error('❌ Error sending order update notification:', notifyError);
+                // Don't fail the entire request if notification fails
+            }
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Order updated successfully'
@@ -207,7 +249,6 @@ exports.updateOrder = async (req, res) => {
         });
     }
 };
-
 
 // Helper function to update product stock
 async function updateStock(id, quantity, productType) {

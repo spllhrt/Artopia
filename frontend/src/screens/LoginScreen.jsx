@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { setUser } from "../redux/authSlice";
 import { loginUser } from "../api/authApi";
 import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
 
 const LoginScreen = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -15,16 +16,26 @@ const LoginScreen = () => {
   const handleInputChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
   };
+
   const handleLogin = async () => {
     if (!formData.email || !formData.password) {
       Alert.alert("Error", "Please enter both email and password");
       return;
     }
+    
     setLoading(true);
+    
     try {
+      // 1. Log the user in
       const response = await loginUser(formData);
+      
+      // 2. Set the user in Redux state
       dispatch(setUser({ user: response.user, token: response.token }));
-  
+      
+      // 3. The NotificationHandler component will automatically fetch notifications
+      // once the user state is updated, since it has a useEffect that depends on userId and token
+      
+      console.log("✅ Login successful");
     } catch (error) {
       Alert.alert("Error", error.message || "Something went wrong");
     } finally {

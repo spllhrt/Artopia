@@ -12,6 +12,7 @@ import Orders from "../screens/admin/OrderScreen";
 import Users from "../screens/admin/UsersScreen";
 import Profile from "../screens/ProfileScreen";
 import Settings from "../screens/SettingsScreen";
+import Notif from "../screens/admin/AdminSendNotificationScreen";
 
 // Bottom Tab Navigator
 const BottomTabs = createBottomTabNavigator();
@@ -61,6 +62,8 @@ const AdminNavigator = () => (
       drawerContent={(props) => <CustomDrawerContent {...props} />}
     >
     <Drawer.Screen name="Home" component={BottomTabNavigator} />
+    
+    <Drawer.Screen name="Promotions" component={Notif} />
     <Drawer.Screen name="Orders" component={Orders} />
     <Drawer.Screen 
         name="Profile" 

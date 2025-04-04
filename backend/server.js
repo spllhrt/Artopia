@@ -26,6 +26,7 @@ const auth = require('./routes/auth');
 const artwork = require('./routes/artwork');
 const artmat = require('./routes/artmat');
 const order = require('./routes/order');
+const pushNotif = require("./routes/pushNotif");
 
 
 connectDatabase();
@@ -40,6 +41,7 @@ app.use('/api/', auth);
 app.use('/api/', artwork);
 app.use('/api/', artmat);
 app.use('/api/', order);
+app.use("/api/", pushNotif);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

@@ -3,6 +3,9 @@ const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// Token expiration period in days
+const TOKEN_EXPIRATION_DAYS = 30;
+
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -33,6 +36,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: 'user'
     },
+    // Enhanced push token fields with expiration
+    pushToken: { 
+        type: String, 
+        default: null 
+    },
+    pushTokenExpires: {
+        type: Date,
+        default: null
+    },
+    pushTokenLastValidated: {
+        type: Date,
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -40,6 +56,41 @@ const userSchema = new mongoose.Schema({
     resetPasswordToken: String,
     resetPasswordExpire: Date
 })
+
+// Method to check if push token has expired
+userSchema.methods.isPushTokenExpired = function() {
+    // If there's no token or expiration date, consider it expired
+    if (!this.pushToken || !this.pushTokenExpires) {
+        return true;
+    }
+    
+    // Check if current date is past the expiration date
+    return Date.now() > this.pushTokenExpires;
+};
+
+// Method to set a new push token with expiration
+userSchema.methods.setPushToken = function(token) {
+    this.pushToken = token;
+    
+    // Set expiration date (30 days from now by default)
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + TOKEN_EXPIRATION_DAYS);
+    this.pushTokenExpires = expiryDate;
+    
+    // Mark as validated now
+    this.pushTokenLastValidated = new Date();
+};
+
+// Method to mark token as validated (without changing the token)
+userSchema.methods.markTokenAsValidated = function() {
+    this.pushTokenLastValidated = new Date();
+    
+    // Optional: extend expiration date when validated
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + TOKEN_EXPIRATION_DAYS);
+    this.pushTokenExpires = expiryDate;
+};
+
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) {
         next()
@@ -56,6 +107,5 @@ userSchema.methods.getJwtToken = function () {
 userSchema.methods.comparePassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 }
-
 
 module.exports = mongoose.model('User', userSchema);
