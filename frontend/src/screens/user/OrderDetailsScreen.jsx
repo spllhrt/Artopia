@@ -263,7 +263,7 @@ const OrderDetailsScreen = () => {
                   </Text>
                   <View style={styles.itemPriceRow}>
                     <Text style={styles.itemPrice}>
-                      ${(item.price || 0).toFixed(2)}
+                    ₱{(item.price || 0).toFixed(2)}
                     </Text>
                     <Text style={styles.itemQuantity}>
                       Qty: {item.quantity || 1}
@@ -344,20 +344,20 @@ const OrderDetailsScreen = () => {
           <View style={styles.summaryContainer}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Items Total:</Text>
-              <Text style={styles.summaryValue}>${itemsPrice.toFixed(2)}</Text>
+              <Text style={styles.summaryValue}>₱{itemsPrice.toFixed(2)}</Text>
             </View>
             
             {taxPrice > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Tax:</Text>
-                <Text style={styles.summaryValue}>${taxPrice.toFixed(2)}</Text>
+                <Text style={styles.summaryValue}>₱{taxPrice.toFixed(2)}</Text>
               </View>
             )}
             
             {shippingPrice > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Shipping:</Text>
-                <Text style={styles.summaryValue}>${shippingPrice.toFixed(2)}</Text>
+                <Text style={styles.summaryValue}>₱{shippingPrice.toFixed(2)}</Text>
               </View>
             )}
             
@@ -365,7 +365,7 @@ const OrderDetailsScreen = () => {
             
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total:</Text>
-              <Text style={styles.totalAmount}>${totalPrice.toFixed(2)}</Text>
+              <Text style={styles.totalAmount}>₱{totalPrice.toFixed(2)}</Text>
             </View>
           </View>
         </View>

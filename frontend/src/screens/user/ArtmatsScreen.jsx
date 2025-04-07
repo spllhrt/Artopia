@@ -173,7 +173,7 @@ const ArtmatsScreen = ({ navigation }) => {
             {item.category}
           </Text>
           <View style={styles.infoRow}>
-            <Text style={styles.artmatPrice}>${formatPrice(item.price)}</Text>
+            <Text style={styles.artmatPrice}>₱{formatPrice(item.price)}</Text>
             <Text style={[
               styles.stockText, 
               item.stock > 0 ? styles.inStockText : styles.outOfStockText
@@ -356,7 +356,7 @@ const ArtmatsScreen = ({ navigation }) => {
             <Text style={styles.filterSectionTitle}>Price Range</Text>
             <View style={styles.priceRangeContainer}>
               <View style={styles.priceInputContainer}>
-                <Text style={styles.priceInputLabel}>Min ($)</Text>
+                <Text style={styles.priceInputLabel}>Min (₱)</Text>
                 <TextInput
                   style={styles.priceInput}
                   value={tempPriceRange.min.toString()}
@@ -369,7 +369,7 @@ const ArtmatsScreen = ({ navigation }) => {
               </View>
               <Text style={styles.priceRangeSeparator}>to</Text>
               <View style={styles.priceInputContainer}>
-                <Text style={styles.priceInputLabel}>Max ($)</Text>
+                <Text style={styles.priceInputLabel}>Max (₱)</Text>
                 <TextInput
                   style={styles.priceInput}
                   value={tempPriceRange.max.toString()}

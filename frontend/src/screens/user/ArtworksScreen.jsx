@@ -169,7 +169,7 @@ const ArtworksScreen = ({ navigation }) => {
             {item.category}
           </Text>
           <View style={styles.priceContainer}>
-            <Text style={styles.artworkPrice}>${formatPrice(item.price)}</Text>
+            <Text style={styles.artworkPrice}>₱{formatPrice(item.price)}</Text>
             {item.ratings > 0 && (
               <View style={styles.ratingContainer}>
                 <Text style={styles.ratingText}>★ {item.ratings}</Text>
@@ -321,7 +321,7 @@ const ArtworksScreen = ({ navigation }) => {
             <Text style={styles.filterSectionTitle}>Price Range</Text>
             <View style={styles.priceRangeContainer}>
               <View style={styles.priceInputContainer}>
-                <Text style={styles.priceInputLabel}>Min ($)</Text>
+                <Text style={styles.priceInputLabel}>Min (₱)</Text>
                 <TextInput
                   style={styles.priceInput}
                   value={tempPriceRange.min.toString()}
@@ -334,7 +334,7 @@ const ArtworksScreen = ({ navigation }) => {
               </View>
               <Text style={styles.priceRangeSeparator}>to</Text>
               <View style={styles.priceInputContainer}>
-                <Text style={styles.priceInputLabel}>Max ($)</Text>
+                <Text style={styles.priceInputLabel}>Max (₱)</Text>
                 <TextInput
                   style={styles.priceInput}
                   value={tempPriceRange.max.toString()}

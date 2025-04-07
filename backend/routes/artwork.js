@@ -24,6 +24,6 @@ router.post('/admin/artwork/new', isAuthenticatedUser, authorizeRoles('admin'), 
 
 router.put('/artwork/review/:artworkId', isAuthenticatedUser, createArtworkReview);
 router.get('/artwork/reviews/:artworkId', getArtworkReviews);
-router.delete('/review/:reviewId', isAuthenticatedUser, authorizeRoles('admin'), deleteReview);
+router.delete('/review/:reviewId', isAuthenticatedUser, deleteReview);
 
 module.exports = router

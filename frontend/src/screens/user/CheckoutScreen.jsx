@@ -154,7 +154,7 @@ const CheckoutScreen = () => {
                   {item.productType === 'artwork' ? item.product.title : item.product.name}
                 </Text>
                 <Text style={styles.itemPrice}>
-                  ${item.product.price} x {item.quantity} = ${(item.product.price * item.quantity).toFixed(2)}
+                ₱{item.product.price} x {item.quantity} = ₱{(item.product.price * item.quantity).toFixed(2)}
                 </Text>
               </View>
             ))
@@ -163,19 +163,19 @@ const CheckoutScreen = () => {
           <View style={styles.divider} />
           <View style={styles.totalContainer}>
             <Text style={styles.totalLabel}>Subtotal:</Text>
-            <Text style={styles.totalAmount}>${totalAmount.toFixed(2)}</Text>
+            <Text style={styles.totalAmount}>₱{totalAmount.toFixed(2)}</Text>
           </View>
           <View style={styles.totalContainer}>
             <Text style={styles.totalLabel}>Tax (10%):</Text>
-            <Text style={styles.totalAmount}>${(totalAmount * 0.1).toFixed(2)}</Text>
+            <Text style={styles.totalAmount}>₱{(totalAmount * 0.1).toFixed(2)}</Text>
           </View>
           <View style={styles.totalContainer}>
             <Text style={styles.totalLabel}>Shipping:</Text>
-            <Text style={styles.totalAmount}>$10.00</Text>
+            <Text style={styles.totalAmount}>₱10.00</Text>
           </View>
           <View style={styles.totalContainer}>
             <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.grandTotal}>${(totalAmount + (totalAmount * 0.1) + 10).toFixed(2)}</Text>
+            <Text style={styles.grandTotal}>₱{(totalAmount + (totalAmount * 0.1) + 10).toFixed(2)}</Text>
           </View>
         </View>
         

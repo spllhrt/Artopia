@@ -152,7 +152,7 @@ const CartScreen = ({ navigation }) => {
         <View style={styles.itemDetails}>
           <Text style={styles.itemTitle} numberOfLines={1}>{title}</Text>
           <Text style={styles.itemSubtitle} numberOfLines={1}>{subtitle}</Text>
-          <Text style={styles.itemPrice}>${item.product.price.toFixed(2)}</Text>
+          <Text style={styles.itemPrice}>₱{item.product.price.toFixed(2)}</Text>
           
           {!isArtwork && (
             // Only show quantity controls for art materials
@@ -230,7 +230,7 @@ const CartScreen = ({ navigation }) => {
       <View style={styles.footer}>
         <View style={styles.totalContainer}>
           <Text style={styles.totalLabel}>Total:</Text>
-          <Text style={styles.totalAmount}>${calculateTotal()}</Text>
+          <Text style={styles.totalAmount}>₱{calculateTotal()}</Text>
         </View>
         
         <View style={styles.actionButtons}>

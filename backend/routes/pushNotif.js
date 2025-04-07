@@ -199,7 +199,7 @@ router.post("/promote-artwork", async (req, res) => {
         // Create notification in database
         const newNotification = new Notification({
             title: `New Artwork: ${artwork.title}`,
-            message: `Discover "${artwork.title}" by ${artwork.artist}, now available for $${artwork.price}`,
+            message: `Discover "${artwork.title}" by ${artwork.artist}, now available for ₱${artwork.price}`,
             sentAt: new Date(),
             data: { type: 'artwork', id: artwork._id }
         });
@@ -213,7 +213,7 @@ router.post("/promote-artwork", async (req, res) => {
             to: user.pushToken,
             sound: "default",
             title: `New Artwork: ${artwork.title}`,
-            body: `Discover "${artwork.title}" by ${artwork.artist}, now available for $${artwork.price}`,
+            body: `Discover "${artwork.title}" by ${artwork.artist}, now available for ₱${artwork.price}`,
             data: { type: 'artwork', id: artwork._id }
         }));
 

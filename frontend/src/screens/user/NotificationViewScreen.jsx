@@ -262,7 +262,7 @@ const NotificationViewScreen = ({ route }) => {
               <Text style={styles.contentItemDescription}>{contentDetails.description}</Text>
             )}
             <Text style={styles.contentItemPrice}>
-              ${typeof contentDetails.price === 'number' ? 
+            ₱{typeof contentDetails.price === 'number' ? 
                 contentDetails.price.toFixed(2) : 
                 contentDetails.price || '0.00'}
             </Text>
@@ -280,7 +280,7 @@ const NotificationViewScreen = ({ route }) => {
               <Text style={styles.contentItemDescription}>{contentDetails.description}</Text>
             )}
             <Text style={styles.contentItemPrice}>
-              ${typeof contentDetails.price === 'number' ? 
+            ₱{typeof contentDetails.price === 'number' ? 
                 contentDetails.price.toFixed(2) : 
                 contentDetails.price || '0.00'}
             </Text>

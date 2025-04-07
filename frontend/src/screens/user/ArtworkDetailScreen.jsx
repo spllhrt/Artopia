@@ -414,7 +414,7 @@ const ArtworkDetailScreen = ({ route, navigation }) => {
           <Text style={styles.category}>{artwork.category}</Text>
           
           <View style={styles.priceRatingContainer}>
-            <Text style={styles.price}>${formatPrice(artwork.price)}</Text>
+            <Text style={styles.price}>₱{formatPrice(artwork.price)}</Text>
             {artwork.ratings > 0 && (
               <View style={styles.ratingContainer}>
                 <Text style={styles.ratingText}>★ {artwork.ratings}</Text>

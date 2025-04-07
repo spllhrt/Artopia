@@ -159,7 +159,7 @@ const HomeScreen = () => {
             </Text>
           )}
           <Text style={styles.priceText}>
-            ${typeof item.price === 'number' ? item.price.toLocaleString() : 'N/A'}
+          ₱{typeof item.price === 'number' ? item.price.toLocaleString() : 'N/A'}
           </Text>
           {item.status && (
             <View style={[styles.statusBadge, item.status === 'sold' ? styles.soldBadge : styles.availableBadge]}>
@@ -188,7 +188,9 @@ const HomeScreen = () => {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{title}</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate(type === 'artwork' ? 'ArtworksScreen' : 'ArtmatsScreen')}
+            onPress={() => navigation.navigate('Shop', { 
+              screen: type === 'artwork' ? 'ArtworksScreen' : 'ArtmatsScreen' 
+            })}
           >
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>

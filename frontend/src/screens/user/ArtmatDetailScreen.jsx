@@ -396,7 +396,7 @@ const ArtmatDetailScreen = ({ route, navigation }) => {
           <Text style={styles.category}>{artmat.category}</Text>
           
           <View style={styles.priceRatingContainer}>
-            <Text style={styles.price}>${formatPrice(artmat.price)}</Text>
+            <Text style={styles.price}>₱{formatPrice(artmat.price)}</Text>
             {artmat.ratings > 0 && (
               <View style={styles.ratingContainer}>
                 <Text style={styles.ratingText}>★ {artmat.ratings}</Text>

@@ -69,16 +69,23 @@ export const updateReview = async (itemType, itemId, reviewId, reviewData) => {
   }
 };
 
+
 export const deleteReview = async (itemType, itemId, reviewId) => {
   try {
-    await apiClient.delete(`/review/${reviewId}`);
+    // Customize the URL based on the itemType
+    // For artmat, include the itemType and itemId in the URL
+    // For artwork, keep the existing endpoint structure
+    const url = itemType === 'artmat' 
+      ? `/artmat/review/${itemId}/${reviewId}` 
+      : `/review/${reviewId}`;
+    
+    await apiClient.delete(url);
     return { success: true };
   } catch (error) {
     console.log(`Error deleting review ${reviewId}:`, error);
     throw error;
   }
 };
-
 // Keep the existing implementation for these functions
 export const getReviewsByItem = async (itemType, itemId, userId = null) => {
   // Implementation remains the same

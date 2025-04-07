@@ -60,7 +60,13 @@ const MyOrdersScreen = () => {
     try {
       setLoading(true);
       const fetchedOrders = await dispatch(getMyOrders());
-      setOrders(fetchedOrders || []);
+      
+      // Sort orders by date (newest first)
+      const sortedOrders = [...(fetchedOrders || [])].sort((a, b) => {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+      
+      setOrders(sortedOrders);
     } catch (error) {
       Alert.alert('Error', 'Failed to load orders');
     } finally {
@@ -301,7 +307,7 @@ const MyOrdersScreen = () => {
             </View>
             <View style={styles.detailItem}>
               <Text style={styles.label}>Total</Text>
-              <Text style={styles.value}>${item.totalPrice.toFixed(2)}</Text>
+              <Text style={styles.value}>₱{item.totalPrice.toFixed(2)}</Text>
             </View>
           </View>
         </View>

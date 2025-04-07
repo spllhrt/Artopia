@@ -277,7 +277,7 @@ useEffect(() => {
               </View>
               <View style={styles.detailRow}>
                 <Ionicons name="pricetag" size={14} color="#6B7280" />
-                <Text style={styles.orderPrice}>${order.totalPrice?.toFixed(2)}</Text>
+                <Text style={styles.orderPrice}>₱{order.totalPrice?.toFixed(2)}</Text>
               </View>
             </View>
             
@@ -379,7 +379,7 @@ useEffect(() => {
                     <DetailItem 
                       icon="cash" 
                       label="Total Amount" 
-                      value={`$${selectedOrder.totalPrice?.toFixed(2)}`} 
+                      value={`₱${selectedOrder.totalPrice?.toFixed(2)}`} 
                       valueStyle={styles.priceValue}
                     />
                   </View>
@@ -472,14 +472,14 @@ useEffect(() => {
                           </View>
                           <View style={styles.productInfo}>
                             <Text style={styles.productName}>{item.name || item.title || 'Product'}</Text>
-                            <Text style={styles.productPrice}>${item.price?.toFixed(2)} × {item.quantity}</Text>
+                            <Text style={styles.productPrice}>₱{item.price?.toFixed(2)} × {item.quantity}</Text>
                           </View>
-                          <Text style={styles.itemTotal}>${(item.price * item.quantity).toFixed(2)}</Text>
+                          <Text style={styles.itemTotal}>₱{(item.price * item.quantity).toFixed(2)}</Text>
                         </View>
                       ))}
                       <View style={styles.orderSummary}>
                         <Text style={styles.summaryLabel}>Total:</Text>
-                        <Text style={styles.summaryValue}>${selectedOrder.totalPrice?.toFixed(2)}</Text>
+                        <Text style={styles.summaryValue}>₱{selectedOrder.totalPrice?.toFixed(2)}</Text>
                       </View>
                     </View>
                   </View>

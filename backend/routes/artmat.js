@@ -10,6 +10,7 @@ const { getArtmats, getSingleArtmat,
     createArtmatReview,
     getArtmatReviews,
     deleteReview,
+    deleteArtmatReview
 
  } = require('../controllers/artmat');
  const { isAuthenticatedUser, authorizeRoles } = require('../middlewares/auth');
@@ -24,6 +25,7 @@ router.post('/admin/artmat/new', isAuthenticatedUser, authorizeRoles('admin'), u
 
 router.put('/artmat/review/:artmatId', isAuthenticatedUser, createArtmatReview);
 router.get('/artmat/reviews/:artmatId', getArtmatReviews);
-router.delete('/review/:reviewId', isAuthenticatedUser, authorizeRoles('admin'), deleteReview);
+router.delete('/review/:reviewId', isAuthenticatedUser, deleteReview);
+router.delete('/artmat/review/:itemId/:reviewId', isAuthenticatedUser, deleteArtmatReview);
 
 module.exports = router
